@@ -6,13 +6,15 @@ psg_mml is a sound middleware for PSG sound source. This middleware supports pla
 The MML used in psg_mml supports not only basic triad tone generation instructions, but also noise generation, envelope volume control, frequency modulation, and other instructions.
 Furthermore, it is possible to play different MML simultaneously with one PSG. For example, you can play sound effects while playing BGM.
 
-# Getting started
-Under preparation.
+# Examples
+
+1. [music_box](examples/music_box)
+
+This is a sample program that plays music when the power is turned on.
+
+ - Sample when using Raspberrypi pico + YMZ294: [rpi_pico_ymz294](examples/music_box/boards/rpi_pico)
 
 # Demo
-Under preparation.
-
-# Examples
 Under preparation.
 
 # MML instructions
@@ -328,6 +330,12 @@ Sets ON/OFF for the software LFO. This value defaults to OFF.
 ### $J &lt;depth&gt;
 
 Sets the modulation depth. Modulation depth defaults to 0.
+1. [music_box](examples/music_box)
+
+電源を入れると音楽を再生するサンプルプログラムです。
+
+ - Raspberrypi pico + YMZ294を使用した場合: [rpi_pico_ymz294](examples/music_box/boards/rpi_pico)
+
 
 |Values|Description|
 |--|--|

@@ -6,21 +6,16 @@ psg_mmlはPSG音源用のサウンドミドルウェアです。このミドル�
 psg_mmlで使用するMMLは，基本的な三和音の楽音発生命令に加え，ノイズの発生や，エンベロープによる音量制御，周波数変調などの命令にも対応しています。
 また，一つのPSGで異なるMMLを同時に演奏することが可能です。例えばBGM演奏中に効果音を再生することができます。
 
-# Getting started
+# Examples
 
-Raspberrypi picoとPSG(YMZ294)を使用して [music_box](examples/music_box)を動かすまでの流れを記述します。
+1. [music_box](examples/music_box)
 
-1. 
+電源を入れると音楽を再生するサンプルプログラムです。
 
-
-
-
+ - Raspberrypi pico + YMZ294を使用した場合のサンプル: [rpi_pico_ymz294](examples/music_box/boards/rpi_pico)
 
 
 # Demo
-準備中
-
-# Examples
 準備中
 
 # MML instructions
