@@ -330,12 +330,6 @@ Sets ON/OFF for the software LFO. This value defaults to OFF.
 ### $J &lt;depth&gt;
 
 Sets the modulation depth. Modulation depth defaults to 0.
-1. [music_box](examples/music_box)
-
-電源を入れると音楽を再生するサンプルプログラムです。
-
- - Raspberrypi pico + YMZ294を使用した場合: [rpi_pico_ymz294](examples/music_box/boards/rpi_pico)
-
 
 |Values|Description|
 |--|--|
