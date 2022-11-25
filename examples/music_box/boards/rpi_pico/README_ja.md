@@ -23,6 +23,7 @@ PWMの周波数は4MHzとしたため、4/6端子(マスタークロック周波
 
 
 **開発環境**
+
 [Raspberry Pi Pico SDK](https://github.com/raspberrypi/pico-sdk)を使用します。
 
 **ビルド**
@@ -30,6 +31,6 @@ PWMの周波数は4MHzとしたため、4/6端子(マスタークロック周波
 以下のコマンドでビルドできます。
 
 ```bash
-$ make build
+$ make -f build.mk
 ```
 

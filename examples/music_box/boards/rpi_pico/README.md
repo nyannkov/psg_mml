@@ -22,6 +22,7 @@ The PWM output of rpi_pico is input to the phiM pin (master clock input) of the 
 Since the PWM frequency is set to 4 MHz, the pins 4/6 (master clock frequency selection) are set High.
 
 **Development environment**
+
 Use [Raspberry Pi Pico SDK](https://github.com/raspberrypi/pico-sdk).
 
 **Build**
