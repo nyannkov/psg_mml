@@ -53,26 +53,8 @@ psg_mml_t psg_mml_init(
 
 #### About slots
 
-
 This middleware provides two slots for loading MML (slots 0 and 1) so that different music data can be played simultaneously.
-The behavior of simultaneous MML playback using these slots depends on the value of the PSG_MML_SHARE_SLOT0_DRIVER setting.
-
-**PSG_MML_SHARE_SLOT0_DRIVER is set to true (default):**
-
-Play by linking slots 0 and 1. Select this mode when one PSG is shared by slots 0 and 1.
-When simultaneous performance occurs, the PSG musical sound channel is preferentially assigned to slot 1, and the remaining channels are assigned to slot 0 and played.
-MML separated by commas is assigned to sound channels A, B, and C in order from the left in slot 0, and assigned to sound channels C, B, and A in slot 1.
-For example, if slot 1 is playing a single note sound effect while slot 0 is playing background music with 3 chords, slot 1 will be channel C.
-The rest of tone channels A and B are assigned to slot 0. (Slot 0 is temporarily played with two chords.)
-Therefore, it is recommended that the MML registered in slot 0 combine the important parts with commas in order from the left.
-
-Since the PSG write function shares the function registered in slot 0, it is possible to specify NULL as the PSG write function when initializing slot 1.
-
-**PSG_MML_SHARE_SLOT0_DRIVER is set to false:**
- 
-Slots 0 and 1 are not linked and played individually. Select this mode when PSGs are to be assigned to slots 0 and 1 individually.
-Since the PSG to be assigned is different for each slot, the PSG write function to be registered must also be registered separately for each slot.
-
+The behavior of simultaneous MML playback using these slots depends on the value of the setting [PSG_MML_SHARE_SLOT0_DRIVER] (#PSG_MML_SHARE_SLOT0_DRIVER).
 
 ### psg_mml_deinit
 
@@ -278,10 +260,21 @@ The FIFO of each music channel can contain at least the number of notes and rest
 
 ### PSG_MML_SHARE_SLOT0_DRIVER
 
-Set this value to true when sharing the PSG write function registered in slot 0 with slot 1. The default for this setting is true.
-Set this value to true when using one PSG and using two playing slots. 
-In this case, if the MMLs registered in slots 0 and 1 are played simultaneously, 
-slot 1 is preferentially assigned to the musical sound channel, and the remaining channels are assigned to slot 0.
+Sets the behavior of slots 0 and 1 as true/false. The default for this constant is true. The behavior of slots 0 and 1 for each value is as follows
+
+**true:**
+
+Slots 0 and 1 are played in conjunction. If a single PSG is shared by slots 0 and 1, the build is performed with this setting value.
+With this setting, the three PSG music channels (channels A, B and C) are preferentially assigned to slot 1 for playing.
+For example, if you are playing background music with 3 chords in slot 0 and want to generate a single note sound effect in slot 1, you would assign music channel C to slot 1 and play the rest of the music channels A, B, and C in slot 0.
+The remaining music channels A and B are assigned to slot 0 (temporarily, slot 0 is assigned to 2 chords, and slot 1 is assigned to 2 chords). （) The remaining music channels A and B are assigned to slot 0 and played.
+The MML for each comma-separated part is assigned to music channels A, B, and C in order from left to right in slot 0.
+Conversely, in slot 1, the MML for each part separated by commas is assigned to music channels C, B, and A.
+Therefore, when playing background music in slot 0, it is recommended to write the parts that can be temporarily silenced on the right side of the comma delimiter.
+
+**false:**
+ 
+Slots 0 and 1 are not linked and are played individually. Select this mode if you want to assign PSGs to slots 0 and 1 individually.
 
 
 ### PSG_MML_DISABLE_PERIODIC_CONTROL()
