@@ -2,9 +2,13 @@
 
 [English](README.md) | [日本語](README_ja.md)
 
-psg_mml is a sound middleware for PSG sound source. This middleware supports playing PSG by MML.
-The MML used in psg_mml supports not only basic triad tone generation instructions, but also noise generation, envelope volume control, frequency modulation, and other instructions.
-Furthermore, it is possible to play different MML simultaneously with one PSG. For example, you can play sound effects while playing BGM.
+psg_mml is a sound middleware for PSG sound source. 
+
+## Features
+
+ - PSG control using MML.
+ - MML supports not only chord music generation commands, but also noise generation, volume control by envelope, frequency modulation, etc.
+ - A single PSG can play different sets of MML simultaneously (e.g., play sound effects while background music is playing).
 
 # Examples
 
@@ -16,6 +20,300 @@ This is a sample program that plays music when the power is turned on.
 
 # Demo
 Under preparation.
+
+
+# Details
+## API reference
+
+### psg_mml_init
+
+Initialize the specified MML slot.
+
+**NOTE:**
+Periodic execution of the function psg_mml_periodic_control() must be stopped while this function is running.
+
+```c
+psg_mml_t psg_mml_init(
+    uint8_t slot
+  , uint16_t tick_hz
+  , void (*p_write)(uint8_t addr, uint8_t data)
+  );
+```
+|Parameters|Description|
+|--|--|
+|slot|Specifies the slot number to initialize, in the range of 0 to 1.|
+|tick_hz|Specifies the call rate of the function psg_mml_periodic_control(). The unit is Hz. The reciprocal of this value is the performance time resolution.|
+|p_write|Specifies a pointer to a function that writes data to the PSG. Since the write function is executed in psg_mml_init(), PSG initialization must be executed in advance.|
+
+|Return values|Conditions|
+|--|--|
+|PSG_MML_SUCCESS|The function completed successfully.|
+|PSG_MML_OUT_OF_SLOT|An out-of-range slot is specified.|
+
+
+#### About slots
+
+
+This middleware provides two slots for loading MML (slots 0 and 1) so that different music data can be played simultaneously.
+The behavior of simultaneous MML playback using these slots depends on the value of the PSG_MML_SHARE_SLOT0_DRIVER setting.
+
+**PSG_MML_SHARE_SLOT0_DRIVER is set to true (default):**
+
+Play by linking slots 0 and 1. Select this mode when one PSG is shared by slots 0 and 1.
+When simultaneous performance occurs, the PSG musical sound channel is preferentially assigned to slot 1, and the remaining channels are assigned to slot 0 and played.
+MML separated by commas is assigned to sound channels A, B, and C in order from the left in slot 0, and assigned to sound channels C, B, and A in slot 1.
+For example, if slot 1 is playing a single note sound effect while slot 0 is playing background music with 3 chords, slot 1 will be channel C.
+The rest of tone channels A and B are assigned to slot 0. (Slot 0 is temporarily played with two chords.)
+Therefore, it is recommended that the MML registered in slot 0 combine the important parts with commas in order from the left.
+
+Since the PSG write function shares the function registered in slot 0, it is possible to specify NULL as the PSG write function when initializing slot 1.
+
+**PSG_MML_SHARE_SLOT0_DRIVER is set to false:**
+ 
+Slots 0 and 1 are not linked and played individually. Select this mode when PSGs are to be assigned to slots 0 and 1 individually.
+Since the PSG to be assigned is different for each slot, the PSG write function to be registered must also be registered separately for each slot.
+
+
+### psg_mml_deinit
+
+Terminates the specified MML slot.
+
+**NOTE:**
+Periodic execution of the function psg_mml_periodic_control() must be stopped while this function is running.
+
+```c
+psg_mml_t psg_mml_deinit(
+    uint8_t slot
+    );
+```
+|Parameters|Description|
+|--|--|
+|slot|Specify the slot number to perform termination processing in the range of 0 to 1.|
+
+|Return values|Conditions|
+|--|--|
+|PSG_MML_SUCCESS|The function completed successfully.|
+|PSG_MML_OUT_OF_SLOT|An out-of-range slot is specified.|
+
+### psg_mml_periodic_control
+
+Acquires MML decoding information from FIFO and controls PSG based on that information.
+This function should be called periodically at the rate of tick_hz after executing the initialization function psg_mml_init().
+
+```c
+void psg_mml_periodic_control(void); 
+```
+
+**NOTE:**
+Other psg_mml functions must not be executed while psg_mml_periodic_control() is being executed.
+
+### psg_mml_load_text
+
+Load the MML to play.
+
+```c
+psg_mml_t  psg_mml_load_text(
+      uint8_t slot
+    , const char *p_mml_text
+    , uint16_t flags
+    );
+```
+
+|Parameters|Description|
+|--|--|
+|slot|Specify the slot number from 0 to 1 to load the MML.|
+|p_mml_text|Specifies a pointer to the MML text to load.|
+|flags|Specifies options for MML decoding.|
+
+|Return values|Conditions|
+|--|--|
+|PSG_MML_SUCCESS|The function completed successfully.|
+|PSG_MML_OUT_OF_SLOT|An out-of-range slot is specified.|
+|PSG_MML_NOT_INITIALIZED|The specified slot has not been initialized.|
+|PSG_MML_TEXT_NULL|The pointer to MML text is NULL.|
+|PSG_MML_TEXT_EMPTY|The MML text is empty.|
+|PSG_MML_TEXT_OVER_LENGTH|The MML text exceeds the readable size.|
+
+#### About flags
+
+|bit|Field|Description|
+|--|--|--|
+|15-1|-|Reserved.|
+|0|RH_LEN|- 0: The default value for the R, H command is 4.<br> - 1: The default value for the R and H commands is the value specified by the L command.|
+
+### psg_mml_decode
+
+Decodes the loaded MML. The decoded result is sent to psg_mml_periodic_control() through FIFO.
+This function does not decode MML at once, but works to decode MML for each channel one instruction at a time and returns the result.
+Since the location of the next MML text to be decoded is retained internally, this function can be executed repeatedly to decode MML one after another.
+When all MML text has been decoded, the function returns PSG_MML_DECODE_END.
+
+```c
+psg_mml_t  psg_mml_decode(
+    uint8_t slot
+    );
+```
+
+|Parameters|Description|
+|--|--|
+|slot|Specifies the slot number from 0 to 1 in which to decode MML.|
+
+|Return values|Conditions|
+|--|--|
+|PSG_MML_SUCCESS|Decoding of loaded MML is partially complete.|
+|PSG_MML_DECODE_END|All decoding of loaded MML is complete.|
+|PSG_MML_DECODE_QUEUE_IS_FULL|No room in the FIFO, MML decoding was not performed.|
+|PSG_MML_OUT_OF_SLOT|An out-of-range slot is specified.|
+|PSG_MML_NOT_INITIALIZED|The specified slot has not been initialized.|
+|PSG_MML_INTERNAL_ERROR|An internal error occurred.|
+
+### psg_mml_play_start
+
+Starts playing the loaded MML.
+
+```c
+psg_mml_t  psg_mml_play_start(
+      uint8_t slot
+    , uint16_t num_predecode
+    );
+```
+
+|Parameters|Description|
+|--|--|
+|slot|Specifies the slot number from 0 to 1 where the performance will start.|
+|num_predecode|Specifies the number of times to decode before starting the performance. Adjust this value if the performance is interrupted immediately after this function is executed.|
+
+|Return values|Conditions|
+|--|--|
+|PSG_MML_SUCCESS|The function completed successfully.|
+|PSG_MML_OUT_OF_SLOT|An out-of-range slot is specified.|
+|PSG_MML_NOT_INITIALIZED|The specified slot has not been initialized.|
+|PSG_MML_INTERNAL_ERROR|n internal error occurred.|
+
+### psg_mml_play_restart
+
+Play the loaded MML again from the beginning.
+
+```c
+psg_mml_t  psg_mml_play_restart(
+      uint8_t slot
+    , uint16_t num_predecode
+    );
+```
+
+|Parameters|Description|
+|--|--|
+|slot|Specifies the slot number from 0 to 1 where the performance will start.|
+|num_predecode|Specifies the number of times to decode before starting the performance. Adjust this value if the performance is interrupted immediately after this function is executed.
+
+|Return values|Conditions|
+|--|--|
+|PSG_MML_SUCCESS|The function completed successfully.|
+|PSG_MML_OUT_OF_SLOT|An out-of-range slot is specified.|
+|PSG_MML_NOT_INITIALIZED|The specified slot has not been initialized.|
+|PSG_MML_INTERNAL_ERROR|n internal error occurred.|
+
+
+### psg_mml_play_stop
+
+Stops MML performance.
+
+```c
+psg_mml_t  psg_mml_play_stop(
+    uint8_t slot
+    );
+```
+
+|Parameters|Description|
+|--|--|
+|slot|Specifies the slot number in the range of 0 to 1 where the performance will stop.|
+
+|Return values|Conditions|
+|--|--|
+|PSG_MML_SUCCESS|The function completed successfully.|
+|PSG_MML_OUT_OF_SLOT|An out-of-range slot is specified.|
+|PSG_MML_NOT_INITIALIZED|The specified slot has not been initialized.|
+
+### psg_mml_get_play_state
+
+Gets the playing status of MML. The playing state is stored in the variable pointed to by parameter p_out.
+
+```c
+psg_mml_t  psg_mml_get_play_state(
+      uint8_t slot
+    , PSG_MML_PLAY_STATE_t *p_out
+    );
+```
+
+|Parameters|Description|
+|--|--|
+|slot|Specify the slot number from 0 to 1 to get the playing status.|
+|p_out|Specifies a pointer to a variable that stores the current playing state.|
+
+|Return values|Conditions|
+|--|--|
+|PSG_MML_SUCCESS|The function completed successfully.|
+|PSG_MML_OUT_OF_SLOT|An out-of-range slot is specified.|
+|PSG_MML_NOT_INITIALIZED|The specified slot has not been initialized.|
+
+#### PSG_MML_PLAY_STATE_t
+
+|Enumerator|Description|
+|--|--|
+|E_PSG_MML_PLAY_STATE_STOP|Not playing.|
+|E_PSG_MML_PLAY_STATE_PLAY|Playing.|
+|E_PSG_MML_PLAY_STATE_END|Finished playing.|
+
+
+## Configuration
+
+The following constants and macros can be defined in psg_mml_conf.h.
+psg_mml_conf_template.h is provided as a template for this header.
+Please edit the contents of this template according to your environment and rename the file name to psg_mml_conf.h.
+
+### PSG_MML_FIFO_SCALE
+
+You can change the length of the FIFO that stores the MML decoding information. The default for this constant is 8.
+The FIFO of each music channel can contain at least the number of notes and rests specified by this value.
+
+### PSG_MML_SHARE_SLOT0_DRIVER
+
+Set this value to true when sharing the PSG write function registered in slot 0 with slot 1. The default for this setting is true.
+Set this value to true when using one PSG and using two playing slots. 
+In this case, if the MMLs registered in slots 0 and 1 are played simultaneously, 
+slot 1 is preferentially assigned to the musical sound channel, and the remaining channels are assigned to slot 0.
+
+
+### PSG_MML_DISABLE_PERIODIC_CONTROL()
+
+This macro is executed when entering the section where the start of execution of psg_mml_periodic_control() is prohibited.
+If the execution of psg_mml_periodic_control() is running in a different thread than other functions, it is necessary to code processing to suppress the start of execution in this macro.
+The default for this macro is empty.
+
+Note that the function that executes this macro ends after executing the macro PSG_MML_ENABLE_PERIODIC_CONTROL() described later.
+Therefore, it does not continue to suppress the psg_mml_periodic_control() function after the function processing ends.
+
+**NOTE:**
+It is necessary to prevent other psg_mml functions from being executed while psg_mml_periodic_control() is running.
+
+### PSG_MML_ENABLE_PERIODIC_CONTROL()
+
+This macro is executed when exiting the section that prohibits the start of execution of psg_mml_periodic_control(). The default for this macro is empty.
+If the suppression processing is written in the macro PSG_MML_DISABLE_PERIODIC_CONTROL(), it is necessary to write the suppression release processing in this macro.
+
+### PSG_MML_HOOK_START_PERIODIC_CONTROL()
+
+This macro function is executed when the psg_mml_periodic_control() function starts executing. The default for this macro function is empty.
+
+### PSG_MML_HOOK_END_PERIODIC_CONTROL()
+
+This macro function is executed at the end of execution of the psg_mml_periodic_control() function. The default for this macro function is empty.
+
+### PSG_MML_ASSERT(TF)
+
+A debugging macro; conditional validation by assert is performed using this macro. This macro defaults to empty.
+Note that this macro is only executed within a local function.
+
 
 # MML instructions
 ## Basic command
@@ -370,299 +668,6 @@ Smoothly increases or decreases the frequency of the output sound to the value s
 |Values|Description|
 |--|--|
 |&lt;pitchbend-level&gt;|Specifies the pitch bend level in the range from (-2880) to 2880. If the specified value is n, the frequency of the output sound changes smoothly up to the final value multiplied by 2^(n/360).|
-
-
-# Details
-## API reference
-
-### psg_mml_init
-
-Initialize the specified MML slot.
-
-**NOTE:**
-Periodic execution of the function psg_mml_periodic_control() must be stopped while this function is running.
-
-```c
-psg_mml_t psg_mml_init(
-    uint8_t slot
-  , uint16_t tick_hz
-  , void (*p_write)(uint8_t addr, uint8_t data)
-  );
-```
-|Parameters|Description|
-|--|--|
-|slot|Specifies the slot number to initialize, in the range of 0 to 1.|
-|tick_hz|Specifies the call rate of the function psg_mml_periodic_control(). The unit is Hz. The reciprocal of this value is the performance time resolution.|
-|p_write|Specifies a pointer to a function that writes data to the PSG. Since the write function is executed in psg_mml_init(), PSG initialization must be executed in advance.|
-
-|Return values|Conditions|
-|--|--|
-|PSG_MML_SUCCESS|The function completed successfully.|
-|PSG_MML_OUT_OF_SLOT|An out-of-range slot is specified.|
-
-
-#### About slots
-
-
-This middleware provides two slots for loading MML (slots 0 and 1) so that different music data can be played simultaneously.
-The behavior of simultaneous MML playback using these slots depends on the value of the PSG_MML_SHARE_SLOT0_DRIVER setting.
-
-**PSG_MML_SHARE_SLOT0_DRIVER is set to true (default):**
-
-Play by linking slots 0 and 1. Select this mode when one PSG is shared by slots 0 and 1.
-When simultaneous performance occurs, the PSG musical sound channel is preferentially assigned to slot 1, and the remaining channels are assigned to slot 0 and played.
-MML separated by commas is assigned to sound channels A, B, and C in order from the left in slot 0, and assigned to sound channels C, B, and A in slot 1.
-For example, if slot 1 is playing a single note sound effect while slot 0 is playing background music with 3 chords, slot 1 will be channel C.
-The rest of tone channels A and B are assigned to slot 0. (Slot 0 is temporarily played with two chords.)
-Therefore, it is recommended that the MML registered in slot 0 combine the important parts with commas in order from the left.
-
-Since the PSG write function shares the function registered in slot 0, it is possible to specify NULL as the PSG write function when initializing slot 1.
-
-**PSG_MML_SHARE_SLOT0_DRIVER is set to false:**
- 
-Slots 0 and 1 are not linked and played individually. Select this mode when PSGs are to be assigned to slots 0 and 1 individually.
-Since the PSG to be assigned is different for each slot, the PSG write function to be registered must also be registered separately for each slot.
-
-
-### psg_mml_deinit
-
-Terminates the specified MML slot.
-
-**NOTE:**
-Periodic execution of the function psg_mml_periodic_control() must be stopped while this function is running.
-
-```c
-psg_mml_t psg_mml_deinit(
-    uint8_t slot
-    );
-```
-|Parameters|Description|
-|--|--|
-|slot|Specify the slot number to perform termination processing in the range of 0 to 1.|
-
-|Return values|Conditions|
-|--|--|
-|PSG_MML_SUCCESS|The function completed successfully.|
-|PSG_MML_OUT_OF_SLOT|An out-of-range slot is specified.|
-
-### psg_mml_periodic_control
-
-Acquires MML decoding information from FIFO and controls PSG based on that information.
-This function should be called periodically at the rate of tick_hz after executing the initialization function psg_mml_init().
-
-```c
-void psg_mml_periodic_control(void); 
-```
-
-**NOTE:**
-Other psg_mml functions must not be executed while psg_mml_periodic_control() is being executed.
-
-### psg_mml_load_text
-
-Load the MML to play.
-
-```c
-psg_mml_t  psg_mml_load_text(
-      uint8_t slot
-    , const char *p_mml_text
-    , uint16_t flags
-    );
-```
-
-|Parameters|Description|
-|--|--|
-|slot|Specify the slot number from 0 to 1 to load the MML.|
-|p_mml_text|Specifies a pointer to the MML text to load.|
-|flags|Specifies options for MML decoding.|
-
-|Return values|Conditions|
-|--|--|
-|PSG_MML_SUCCESS|The function completed successfully.|
-|PSG_MML_OUT_OF_SLOT|An out-of-range slot is specified.|
-|PSG_MML_NOT_INITIALIZED|The specified slot has not been initialized.|
-|PSG_MML_TEXT_NULL|The pointer to MML text is NULL.|
-|PSG_MML_TEXT_EMPTY|The MML text is empty.|
-|PSG_MML_TEXT_OVER_LENGTH|The MML text exceeds the readable size.|
-
-#### About flags
-
-|bit|Field|Description|
-|--|--|--|
-|15-1|-|Reserved.|
-|0|RH_LEN|- 0: The default value for the R, H command is 4.<br> - 1: The default value for the R and H commands is the value specified by the L command.|
-
-### psg_mml_decode
-
-Decodes the loaded MML. The decoded result is sent to psg_mml_periodic_control() through FIFO.
-This function does not decode MML at once, but works to decode MML for each channel one instruction at a time and returns the result.
-Since the location of the next MML text to be decoded is retained internally, this function can be executed repeatedly to decode MML one after another.
-When all MML text has been decoded, the function returns PSG_MML_DECODE_END.
-
-```c
-psg_mml_t  psg_mml_decode(
-    uint8_t slot
-    );
-```
-
-|Parameters|Description|
-|--|--|
-|slot|Specifies the slot number from 0 to 1 in which to decode MML.|
-
-|Return values|Conditions|
-|--|--|
-|PSG_MML_SUCCESS|Decoding of loaded MML is partially complete.|
-|PSG_MML_DECODE_END|All decoding of loaded MML is complete.|
-|PSG_MML_DECODE_QUEUE_IS_FULL|No room in the FIFO, MML decoding was not performed.|
-|PSG_MML_OUT_OF_SLOT|An out-of-range slot is specified.|
-|PSG_MML_NOT_INITIALIZED|The specified slot has not been initialized.|
-|PSG_MML_INTERNAL_ERROR|An internal error occurred.|
-
-### psg_mml_play_start
-
-Starts playing the loaded MML.
-
-```c
-psg_mml_t  psg_mml_play_start(
-      uint8_t slot
-    , uint16_t num_predecode
-    );
-```
-
-|Parameters|Description|
-|--|--|
-|slot|Specifies the slot number from 0 to 1 where the performance will start.|
-|num_predecode|Specifies the number of times to decode before starting the performance. Adjust this value if the performance is interrupted immediately after this function is executed.|
-
-|Return values|Conditions|
-|--|--|
-|PSG_MML_SUCCESS|The function completed successfully.|
-|PSG_MML_OUT_OF_SLOT|An out-of-range slot is specified.|
-|PSG_MML_NOT_INITIALIZED|The specified slot has not been initialized.|
-|PSG_MML_INTERNAL_ERROR|n internal error occurred.|
-
-### psg_mml_play_restart
-
-Play the loaded MML again from the beginning.
-
-```c
-psg_mml_t  psg_mml_play_restart(
-      uint8_t slot
-    , uint16_t num_predecode
-    );
-```
-
-|Parameters|Description|
-|--|--|
-|slot|Specifies the slot number from 0 to 1 where the performance will start.|
-|num_predecode|Specifies the number of times to decode before starting the performance. Adjust this value if the performance is interrupted immediately after this function is executed.
-
-|Return values|Conditions|
-|--|--|
-|PSG_MML_SUCCESS|The function completed successfully.|
-|PSG_MML_OUT_OF_SLOT|An out-of-range slot is specified.|
-|PSG_MML_NOT_INITIALIZED|The specified slot has not been initialized.|
-|PSG_MML_INTERNAL_ERROR|n internal error occurred.|
-
-
-### psg_mml_play_stop
-
-Stops MML performance.
-
-```c
-psg_mml_t  psg_mml_play_stop(
-    uint8_t slot
-    );
-```
-
-|Parameters|Description|
-|--|--|
-|slot|Specifies the slot number in the range of 0 to 1 where the performance will stop.|
-
-|Return values|Conditions|
-|--|--|
-|PSG_MML_SUCCESS|The function completed successfully.|
-|PSG_MML_OUT_OF_SLOT|An out-of-range slot is specified.|
-|PSG_MML_NOT_INITIALIZED|The specified slot has not been initialized.|
-
-### psg_mml_get_play_state
-
-Gets the playing status of MML. The playing state is stored in the variable pointed to by parameter p_out.
-
-```c
-psg_mml_t  psg_mml_get_play_state(
-      uint8_t slot
-    , PSG_MML_PLAY_STATE_t *p_out
-    );
-```
-
-|Parameters|Description|
-|--|--|
-|slot|Specify the slot number from 0 to 1 to get the playing status.|
-|p_out|Specifies a pointer to a variable that stores the current playing state.|
-
-|Return values|Conditions|
-|--|--|
-|PSG_MML_SUCCESS|The function completed successfully.|
-|PSG_MML_OUT_OF_SLOT|An out-of-range slot is specified.|
-|PSG_MML_NOT_INITIALIZED|The specified slot has not been initialized.|
-
-#### PSG_MML_PLAY_STATE_t
-
-|Enumerator|Description|
-|--|--|
-|E_PSG_MML_PLAY_STATE_STOP|Not playing.|
-|E_PSG_MML_PLAY_STATE_PLAY|Playing.|
-|E_PSG_MML_PLAY_STATE_END|Finished playing.|
-
-
-## Configuration
-
-The following constants and macros can be defined in psg_mml_conf.h.
-psg_mml_conf_template.h is provided as a template for this header.
-Please edit the contents of this template according to your environment and rename the file name to psg_mml_conf.h.
-
-### PSG_MML_FIFO_SCALE
-
-You can change the length of the FIFO that stores the MML decoding information. The default for this constant is 8.
-The FIFO of each music channel can contain at least the number of notes and rests specified by this value.
-
-### PSG_MML_SHARE_SLOT0_DRIVER
-
-Set this value to true when sharing the PSG write function registered in slot 0 with slot 1. The default for this setting is true.
-Set this value to true when using one PSG and using two playing slots. 
-In this case, if the MMLs registered in slots 0 and 1 are played simultaneously, 
-slot 1 is preferentially assigned to the musical sound channel, and the remaining channels are assigned to slot 0.
-
-
-### PSG_MML_DISABLE_PERIODIC_CONTROL()
-
-This macro is executed when entering the section where the start of execution of psg_mml_periodic_control() is prohibited.
-If the execution of psg_mml_periodic_control() is running in a different thread than other functions, it is necessary to code processing to suppress the start of execution in this macro.
-The default for this macro is empty.
-
-Note that the function that executes this macro ends after executing the macro PSG_MML_ENABLE_PERIODIC_CONTROL() described later.
-Therefore, it does not continue to suppress the psg_mml_periodic_control() function after the function processing ends.
-
-**NOTE:**
-It is necessary to prevent other psg_mml functions from being executed while psg_mml_periodic_control() is running.
-
-### PSG_MML_ENABLE_PERIODIC_CONTROL()
-
-This macro is executed when exiting the section that prohibits the start of execution of psg_mml_periodic_control(). The default for this macro is empty.
-If the suppression processing is written in the macro PSG_MML_DISABLE_PERIODIC_CONTROL(), it is necessary to write the suppression release processing in this macro.
-
-### PSG_MML_HOOK_START_PERIODIC_CONTROL()
-
-This macro function is executed when the psg_mml_periodic_control() function starts executing. The default for this macro function is empty.
-
-### PSG_MML_HOOK_END_PERIODIC_CONTROL()
-
-This macro function is executed at the end of execution of the psg_mml_periodic_control() function. The default for this macro function is empty.
-
-### PSG_MML_ASSERT(TF)
-
-A debugging macro; conditional validation by assert is performed using this macro. This macro defaults to empty.
-Note that this macro is only executed within a local function.
 
 # License
 

@@ -2,9 +2,13 @@
 
 [English](README.md) | [日本語](README_ja.md)
 
-psg_mmlはPSG音源用のサウンドミドルウェアです。このミドルウェアは，MMLによるPSGの演奏をサポートします。
-psg_mmlで使用するMMLは，基本的な三和音の楽音発生命令に加え，ノイズの発生や，エンベロープによる音量制御，周波数変調などの命令にも対応しています。
-また，一つのPSGで異なるMMLを同時に演奏することが可能です。例えばBGM演奏中に効果音を再生することができます。
+psg_mmlはPSG音源用のサウンドミドルウェアです。
+
+## 特徴
+
+ - MMLを使用したPSG制御。
+ - MMLは和音の楽音発生命令に加え，ノイズの発生や，エンベロープによる音量制御，周波数変調などをサポート
+ - 一つのPSGで異なるMMLセットを同時に演奏することが可能（例えばBGM演奏中に効果音を再生する，など）
 
 # Examples
 
@@ -14,9 +18,309 @@ psg_mmlで使用するMMLは，基本的な三和音の楽音発生命令に加�
 
  - Raspberrypi pico + YMZ294を使用した場合のサンプル: [rpi_pico_ymz294](examples/music_box/boards/rpi_pico)
 
-
 # Demo
 準備中
+
+# Details
+## API reference
+
+### psg_mml_init
+
+指定したMMLスロットの初期化を行います。
+
+**NOTE:**
+この関数の実行中は、関数psg_mml_periodic_control()の周期実行を停止する必要があります。
+
+```c
+psg_mml_t psg_mml_init(
+    uint8_t slot
+  , uint16_t tick_hz
+  , void (*p_write)(uint8_t addr, uint8_t data)
+  );
+```
+|引数|説明|
+|--|--|
+|slot|初期化するスロット番号を0から1の範囲で指定します。|
+|tick_hz|関数psg_mml_periodic_control()の呼び出しレートを指定します。単位はHzです。この値の逆数が演奏時間の分解能になります。|
+|p_write|PSGにデータを書き込む関数へのポインタを指定します。なお，書き込み関数はpsg_mml_init()内で実行されるため，PSGの初期化を事前に実行しておく必要があります。|
+
+|戻り値|条件|
+|--|--|
+|PSG_MML_SUCCESS|関数が正常に終了した場合。|
+|PSG_MML_OUT_OF_SLOT|範囲外のスロットが指定された場合。|
+
+
+#### slotについて
+
+本ミドルウェアでは異なる音楽データを同時に演奏できるように、MMLをロードするためのスロットを2つ用意しています（スロット0，1）。
+これらのスロットを使用したMMLの同時演奏の挙動は、設定値PSG_MML_SHARE_SLOT0_DRIVERの値によって変化します。
+
+**PSG_MML_SHARE_SLOT0_DRIVERをtrueに設定した場合（デフォルト）**
+
+スロット0, 1を連携させて演奏します。一つのPSGをスロット0，1で共有する場合は，この設定値でビルドを実行します。
+この設定値では、3つあるPSGの楽音チャンネル(チャンネルA, BおよびC)をスロット1に優先的に割り当て、残りのチャンネルをスロット0に割り当てて
+演奏を行います。例えばスロット0で3和音のBGMを再生中にスロット1で単音の効果音を発音する場合、スロット1には楽音チャンネルCを割り当て、
+スロット0には楽音チャンネルA, Bが割り当てられます。（一時的にスロット0は2和音での演奏になります。)
+
+TODO
+カンマで区切ったMMLは、スロット0では左から順に楽音チャンネルA, B, Cに割り当て、スロット1では逆に楽音チャンネルC, B, Aに割り当てます。
+
+
+同時演奏が発生すると、3つあるPSGの楽音チャンネルは、スロット1に優先的に割り当てられ、スロット0には残りのチャンネルが割り当てられます。
+カンマで区切ったMMLは、スロット0では左から順に楽音チャンネルA, B, Cに割り当て、スロット1では逆に楽音チャンネルC, B, Aに割り当てます。
+例えばスロット0で3和音のBGMを再生中にスロット1で単音の効果音を発音する場合、スロット1には楽音チャンネルCが、
+スロット0には余った楽音チャンネルA, Bが割り当てられます。（一時的にスロット0は2和音での演奏になります。)
+そのため、スロット0に登録するMMLは、重要なパートを左から順にカンマで結合することを推奨します。
+
+なお、PSG書き込み関数はスロット0に登録した関数を共有するため、スロット1の初期化の際は、PSG書き込み関数としてNULLを指定することが可能です。
+
+**PSG_MML_SHARE_SLOT0_DRIVERをfalseに設定した場合**
+ 
+スロット0, 1を連携させず個別に演奏を行います。スロット0および1に個別にPSGを割り当てるような場合は，このモードを選択します。
+割り当てるPSGがスロットごとに異なるため，登録するPSG書き込み関数も各スロットに個別に登録する必要があります。
+
+
+
+
+### psg_mml_deinit
+
+指定したMMLスロットの終了処理を行います。
+
+**NOTE:**
+この関数の実行中は、関数psg_mml_periodic_control()の周期実行を停止する必要があります。
+
+```c
+psg_mml_t psg_mml_deinit(
+    uint8_t slot
+    );
+```
+|引数|説明|
+|--|--|
+|slot|終了処理を行うスロット番号を0から1の範囲で指定します。|
+
+|戻り値|条件|
+|--|--|
+|PSG_MML_SUCCESS|関数が正常に終了した場合。|
+|PSG_MML_OUT_OF_SLOT|範囲外のスロットが指定された場合。|
+
+### psg_mml_periodic_control
+
+MMLのデコード情報をFIFOから取得し，その情報をもとにPSGを制御します。
+この関数は，初期化関数psg_mml_init()を実行した後に，tick_hzのレートで周期的で呼び出す必要があります。
+
+```c
+void psg_mml_periodic_control(void); 
+```
+
+**NOTE:**
+psg_mml_periodic_control()実行中は，他のpsg_mmlの関数が実行されないようにする必要があります。
+
+### psg_mml_load_text
+
+演奏するMMLをロードします。
+
+```c
+psg_mml_t  psg_mml_load_text(
+      uint8_t slot
+    , const char *p_mml_text
+    , uint16_t flags
+    );
+```
+
+|引数|説明|
+|--|--|
+|slot|MMLをロードするスロット番号を0から1の範囲で指定します。|
+|p_mml_text|ロードするMMLテキストへのポインタを指定します。|
+|flags|MMLデコードのオプションを指定します。|
+
+|戻り値|条件|
+|--|--|
+|PSG_MML_SUCCESS|関数が正常に終了した場合。|
+|PSG_MML_OUT_OF_SLOT|範囲外のスロットが指定された場合。|
+|PSG_MML_NOT_INITIALIZED|指定したスロットが初期化されていない場合。|
+|PSG_MML_TEXT_NULL|MMLテキストへのポインタがNULLである場合。|
+|PSG_MML_TEXT_EMPTY|MMLテキストが空である場合。|
+|PSG_MML_TEXT_OVER_LENGTH|MMLテキストが，読み込み可能なサイズを超えている場合。|
+
+#### flagsについて
+
+|bit|フィールド名|説明|
+|--|--|--|
+|15-1|-|予約|
+|0|RH_LEN|- 0: R，Hコマンドのデフォルト値は4になります。<br> - 1: R，Hコマンドのデフォルト値はLコマンドで指定した値になります。|
+
+
+### psg_mml_decode
+
+ロードしたMMLをデコードします。デコードした結果はFIFOを通してpsg_mml_periodic_control()に送信されます。
+この関数は，一度にMMLのデコードは行わず，各チャンネルのMMLを１命令ずつデコードを行った後，結果をリターンするように動作します。
+次にデコードを行うMMLテキストの位置は内部で保持されているため，この関数を繰り返し実行することで，MMLのデコードを逐一行うことができます。
+MMLをすべてデコードし終えると，この関数はPSG_MML_DECODE_ENDをリターンします。
+
+```c
+psg_mml_t  psg_mml_decode(
+    uint8_t slot
+    );
+```
+
+|引数|説明|
+|--|--|
+|slot|MMLをデコードするスロット番号を0から1の範囲で指定します。|
+
+|戻り値|条件|
+|--|--|
+|PSG_MML_SUCCESS|ロードしたMMLのデコードが一部完了した場合。|
+|PSG_MML_DECODE_END|ロードしたMMLのデコードがすべて完了した場合。|
+|PSG_MML_DECODE_QUEUE_IS_FULL|FIFOに空きがなく，MMLのデコードを見送った場合。|
+|PSG_MML_OUT_OF_SLOT|範囲外のスロットが指定された場合。|
+|PSG_MML_NOT_INITIALIZED|指定したスロットが初期化されていない場合。|
+|PSG_MML_INTERNAL_ERROR|内部エラーが発生した場合。|
+
+### psg_mml_play_start
+
+ロードしたMMLの演奏を開始します。
+
+```c
+psg_mml_t  psg_mml_play_start(
+      uint8_t slot
+    , uint16_t num_predecode
+    );
+```
+
+|引数|説明|
+|--|--|
+|slot|演奏を開始するスロット番号を0から1の範囲で指定します。|
+|num_predecode|演奏を開始する前にデコードを行う回数を指定します。この関数を実行した直後に演奏が途切れてしまう場合，この値を調整してください。|
+
+|戻り値|条件|
+|--|--|
+|PSG_MML_SUCCESS|関数が正常に終了した場合。|
+|PSG_MML_OUT_OF_SLOT|範囲外のスロットが指定された場合。|
+|PSG_MML_NOT_INITIALIZED|指定したスロットが初期化されていない場合。|
+|PSG_MML_INTERNAL_ERROR|内部エラーが発生した場合。|
+
+### psg_mml_play_restart
+
+ロードしたMMLをはじめから演奏し直します。
+
+```c
+psg_mml_t  psg_mml_play_restart(
+      uint8_t slot
+    , uint16_t num_predecode
+    );
+```
+
+|引数|説明|
+|--|--|
+|slot|演奏を開始するスロット番号を0から1の範囲で指定します。|
+|num_predecode|演奏を開始する前にデコードを行う回数を指定します。この関数を実行した直後に演奏が途切れてしまう場合，この値を調整してください。|
+
+|戻り値|条件|
+|--|--|
+|PSG_MML_SUCCESS|関数が正常に終了した場合。|
+|PSG_MML_OUT_OF_SLOT|範囲外のスロットが指定された場合。|
+|PSG_MML_NOT_INITIALIZED|指定したスロットが初期化されていない場合。|
+|PSG_MML_INTERNAL_ERROR|内部エラーが発生した場合。|
+
+
+### psg_mml_play_stop
+
+MMLの演奏を停止します。
+
+```c
+psg_mml_t  psg_mml_play_stop(
+    uint8_t slot
+    );
+```
+
+|引数|説明|
+|--|--|
+|slot|演奏を停止するスロット番号を0から1の範囲で指定します。|
+
+|戻り値|条件|
+|--|--|
+|PSG_MML_SUCCESS|関数が正常に終了した場合。|
+|PSG_MML_OUT_OF_SLOT|範囲外のスロットが指定された場合。|
+|PSG_MML_NOT_INITIALIZED|指定したスロットが初期化されていない場合。|
+
+
+### psg_mml_get_play_state
+
+MMLの演奏状態を取得します。演奏状態は引数p_outが指す変数に格納されます。
+
+```c
+psg_mml_t  psg_mml_get_play_state(
+      uint8_t slot
+    , PSG_MML_PLAY_STATE_t *p_out
+    );
+```
+
+|引数|説明|
+|--|--|
+|slot|演奏状態を取得するスロット番号を0から1の範囲で指定します。|
+|p_out|現在の演奏状態を格納する変数へのポインタを指定します。|
+
+|戻り値|条件|
+|--|--|
+|PSG_MML_SUCCESS|関数が正常に終了した場合。|
+|PSG_MML_OUT_OF_SLOT|範囲外のスロットが指定された場合。|
+|PSG_MML_NOT_INITIALIZED|指定したスロットが初期化されていない場合。|
+
+#### PSG_MML_PLAY_STATE_t
+
+|列挙子|説明|
+|--|--|
+|E_PSG_MML_PLAY_STATE_STOP|演奏停止中|
+|E_PSG_MML_PLAY_STATE_PLAY|演奏中|
+|E_PSG_MML_PLAY_STATE_END|演奏終了|
+
+
+## Configuration
+
+以下の定数およびマクロをpsg_mml_conf.h内で定義することができます。
+このヘッダのテンプレートとして、psg_mml_conf_template.hを用意しています。
+環境に合わせてこのテンプレートの内容を編集し、ファイル名をpsg_mml_conf.hにリネームしてご使用ください。
+
+### PSG_MML_FIFO_SCALE
+
+MMLのデコード情報を格納するFIFOの長さを変更できます。この定数のデフォルトは8です。
+各楽音チャンネルのFIFOには，少なくともこの値で指定した個数分の音符および休符を格納することができます。
+
+### PSG_MML_SHARE_SLOT0_DRIVER
+
+スロット0に登録したPSG書き込み関数を，スロット1と共有する場合に，この設定値をtrueにします。この設定値のデフォルトはtrueです。
+一つのPSGを使用して演奏スロットを二つ使用する場合，この設定値をtrueにします。この場合，スロット0および1に登録したMMLを同時に演奏すると，スロット1に優先的に楽音チャンネルを割り当て，余ったチャンネルをスロット0に割り当てます。
+
+### PSG_MML_DISABLE_PERIODIC_CONTROL()
+
+psg_mml_periodic_control()の実行開始を禁止する区間に入った際に，このマクロが実行されます。
+psg_mml_periodic_control()の実行が，他の関数とは別スレッドで動作している場合，このマクロに実行開始を抑止する処理を記述する必要があります。
+このマクロのデフォルトは空です。
+
+なお，このマクロを実行する関数は，後述のマクロPSG_MML_ENABLE_PERIODIC_CONTROL()を実行してから終了するため，
+関数処理終了後にpsg_mml_periodic_control()関数の抑止を継続するようなことはありません。
+
+**NOTE:**
+psg_mml_periodic_control()実行中は，他のpsg_mmlの関数が実行されないようにする必要があります。
+
+### PSG_MML_ENABLE_PERIODIC_CONTROL()
+
+psg_mml_periodic_control()の実行開始を禁止する区間から抜ける際に、このマクロが実行されます。このマクロのデフォルトは空です。
+マクロPSG_MML_DISABLE_PERIODIC_CONTROL()に抑止処理を記述した場合、このマクロに抑止解除処理を記述する必要があります。
+
+### PSG_MML_HOOK_START_PERIODIC_CONTROL()
+
+psg_mml_periodic_control()関数の実行開始時このマクロ関数が実行されます。このマクロ関数のデフォルトは空です。
+
+### PSG_MML_HOOK_END_PERIODIC_CONTROL()
+
+psg_mml_periodic_control()関数の実行終了時にこのマクロ関数が実行されます。このマクロ関数のデフォルトは空です。
+
+### PSG_MML_ASSERT(TF)
+
+デバッグ用マクロ。assertによる条件検証は、このマクロを使用して行われます。このマクロのデフォルトは空です。
+なお、このマクロはローカル関数内でのみ実行されます。
+
 
 # MML instructions
 ## 基本コマンド
@@ -368,301 +672,6 @@ psg_mmlには，ソフトウェアLFOを搭載しています。この機能を�
 |--|--|
 |&lt;pitchbend-level&gt;|ピッチベントレベルを(-2880)から2880の範囲で指定します。指定した値をnとすると，出力する音の周波数は最終的に2^(n/360)倍した値までなめらかに変化します。|
 
-
-
-
-
-# Details
-## API reference
-
-### psg_mml_init
-
-指定したMMLスロットの初期化を行います。
-
-**NOTE:**
-この関数の実行中は、関数psg_mml_periodic_control()の周期実行を停止する必要があります。
-
-```c
-psg_mml_t psg_mml_init(
-    uint8_t slot
-  , uint16_t tick_hz
-  , void (*p_write)(uint8_t addr, uint8_t data)
-  );
-```
-|引数|説明|
-|--|--|
-|slot|初期化するスロット番号を0から1の範囲で指定します。|
-|tick_hz|関数psg_mml_periodic_control()の呼び出しレートを指定します。単位はHzです。この値の逆数が演奏時間の分解能になります。|
-|p_write|PSGにデータを書き込む関数へのポインタを指定します。なお，書き込み関数はpsg_mml_init()内で実行されるため，PSGの初期化を事前に実行しておく必要があります。|
-
-|戻り値|条件|
-|--|--|
-|PSG_MML_SUCCESS|関数が正常に終了した場合。|
-|PSG_MML_OUT_OF_SLOT|範囲外のスロットが指定された場合。|
-
-
-#### slotについて
-
-本ミドルウェアでは異なる音楽データを同時に演奏できるように、MMLをロードするためのスロットを2つ用意しています（スロット0，1）。
-これらのスロットを使用したMMLの同時演奏の挙動は、設定値PSG_MML_SHARE_SLOT0_DRIVERの値によって変化します。
-
-**PSG_MML_SHARE_SLOT0_DRIVERをtrueに設定した場合（デフォルト）**
-
-スロット0, 1を連携させて演奏します。一つのPSGをスロット0，1で共有する場合に，このモードを選択します。
-同時演奏が発生した場合、スロット1にPSG楽音チャンネルを優先的に割り当て、残りのチャンネルをスロット0に割り当てて演奏します。
-カンマで区切ったMMLは、スロット0では左から順に楽音チャンネルA, B, Cに割り当て、スロット1では逆に楽音チャンネルC, B, Aに割り当てます。
-例えばスロット0で3和音のBGMを再生中にスロット1で単音の効果音を発音する場合、スロット1には楽音チャンネルCが、
-スロット0には余った楽音チャンネルA, Bが割り当てられます。（一時的にスロット0は2和音での演奏になります。)
-そのため、スロット0に登録するMMLは、重要なパートを左から順にカンマで結合することを推奨します。
-
-なお、PSG書き込み関数はスロット0に登録した関数を共有するため、スロット1の初期化の際は、PSG書き込み関数としてNULLを指定することが可能です。
-
-**PSG_MML_SHARE_SLOT0_DRIVERをfalseに設定した場合**
- 
-スロット0, 1を連携させず個別に演奏を行います。スロット0および1に個別にPSGを割り当てるような場合に，このモードを選択します。
-割り当てるPSGがスロットごとに異なるため，登録するPSG書き込み関数も各スロットに個別に登録する必要があります。
-
-
-
-
-### psg_mml_deinit
-
-指定したMMLスロットの終了処理を行います。
-
-**NOTE:**
-この関数の実行中は、関数psg_mml_periodic_control()の周期実行を停止する必要があります。
-
-```c
-psg_mml_t psg_mml_deinit(
-    uint8_t slot
-    );
-```
-|引数|説明|
-|--|--|
-|slot|終了処理を行うスロット番号を0から1の範囲で指定します。|
-
-|戻り値|条件|
-|--|--|
-|PSG_MML_SUCCESS|関数が正常に終了した場合。|
-|PSG_MML_OUT_OF_SLOT|範囲外のスロットが指定された場合。|
-
-### psg_mml_periodic_control
-
-MMLのデコード情報をFIFOから取得し，その情報をもとにPSGを制御します。
-この関数は，初期化関数psg_mml_init()を実行した後に，tick_hzのレートで周期的で呼び出す必要があります。
-
-```c
-void psg_mml_periodic_control(void); 
-```
-
-**NOTE:**
-psg_mml_periodic_control()実行中は，他のpsg_mmlの関数が実行されないようにする必要があります。
-
-### psg_mml_load_text
-
-演奏するMMLをロードします。
-
-```c
-psg_mml_t  psg_mml_load_text(
-      uint8_t slot
-    , const char *p_mml_text
-    , uint16_t flags
-    );
-```
-
-|引数|説明|
-|--|--|
-|slot|MMLをロードするスロット番号を0から1の範囲で指定します。|
-|p_mml_text|ロードするMMLテキストへのポインタを指定します。|
-|flags|MMLデコードのオプションを指定します。|
-
-|戻り値|条件|
-|--|--|
-|PSG_MML_SUCCESS|関数が正常に終了した場合。|
-|PSG_MML_OUT_OF_SLOT|範囲外のスロットが指定された場合。|
-|PSG_MML_NOT_INITIALIZED|指定したスロットが初期化されていない場合。|
-|PSG_MML_TEXT_NULL|MMLテキストへのポインタがNULLである場合。|
-|PSG_MML_TEXT_EMPTY|MMLテキストが空である場合。|
-|PSG_MML_TEXT_OVER_LENGTH|MMLテキストが，読み込み可能なサイズを超えている場合。|
-
-#### flagsについて
-
-|bit|フィールド名|説明|
-|--|--|--|
-|15-1|-|予約|
-|0|RH_LEN|- 0: R，Hコマンドのデフォルト値は4になります。<br> - 1: R，Hコマンドのデフォルト値はLコマンドで指定した値になります。|
-
-
-### psg_mml_decode
-
-ロードしたMMLをデコードします。デコードした結果はFIFOを通してpsg_mml_periodic_control()に送信されます。
-この関数は，一度にMMLのデコードは行わず，各チャンネルのMMLを１命令ずつデコードを行った後，結果をリターンするように動作します。
-次にデコードを行うMMLテキストの位置は内部で保持されているため，この関数を繰り返し実行することで，MMLのデコードを逐一行うことができます。
-MMLをすべてデコードし終えると，この関数はPSG_MML_DECODE_ENDをリターンします。
-
-```c
-psg_mml_t  psg_mml_decode(
-    uint8_t slot
-    );
-```
-
-|引数|説明|
-|--|--|
-|slot|MMLをデコードするスロット番号を0から1の範囲で指定します。|
-
-|戻り値|条件|
-|--|--|
-|PSG_MML_SUCCESS|ロードしたMMLのデコードが一部完了した場合。|
-|PSG_MML_DECODE_END|ロードしたMMLのデコードがすべて完了した場合。|
-|PSG_MML_DECODE_QUEUE_IS_FULL|FIFOに空きがなく，MMLのデコードを見送った場合。|
-|PSG_MML_OUT_OF_SLOT|範囲外のスロットが指定された場合。|
-|PSG_MML_NOT_INITIALIZED|指定したスロットが初期化されていない場合。|
-|PSG_MML_INTERNAL_ERROR|内部エラーが発生した場合。|
-
-### psg_mml_play_start
-
-ロードしたMMLの演奏を開始します。
-
-```c
-psg_mml_t  psg_mml_play_start(
-      uint8_t slot
-    , uint16_t num_predecode
-    );
-```
-
-|引数|説明|
-|--|--|
-|slot|演奏を開始するスロット番号を0から1の範囲で指定します。|
-|num_predecode|演奏を開始する前にデコードを行う回数を指定します。この関数を実行した直後に演奏が途切れてしまう場合，この値を調整してください。|
-
-|戻り値|条件|
-|--|--|
-|PSG_MML_SUCCESS|関数が正常に終了した場合。|
-|PSG_MML_OUT_OF_SLOT|範囲外のスロットが指定された場合。|
-|PSG_MML_NOT_INITIALIZED|指定したスロットが初期化されていない場合。|
-|PSG_MML_INTERNAL_ERROR|内部エラーが発生した場合。|
-
-### psg_mml_play_restart
-
-ロードしたMMLをはじめから演奏し直します。
-
-```c
-psg_mml_t  psg_mml_play_restart(
-      uint8_t slot
-    , uint16_t num_predecode
-    );
-```
-
-|引数|説明|
-|--|--|
-|slot|演奏を開始するスロット番号を0から1の範囲で指定します。|
-|num_predecode|演奏を開始する前にデコードを行う回数を指定します。この関数を実行した直後に演奏が途切れてしまう場合，この値を調整してください。|
-
-|戻り値|条件|
-|--|--|
-|PSG_MML_SUCCESS|関数が正常に終了した場合。|
-|PSG_MML_OUT_OF_SLOT|範囲外のスロットが指定された場合。|
-|PSG_MML_NOT_INITIALIZED|指定したスロットが初期化されていない場合。|
-|PSG_MML_INTERNAL_ERROR|内部エラーが発生した場合。|
-
-
-### psg_mml_play_stop
-
-MMLの演奏を停止します。
-
-```c
-psg_mml_t  psg_mml_play_stop(
-    uint8_t slot
-    );
-```
-
-|引数|説明|
-|--|--|
-|slot|演奏を停止するスロット番号を0から1の範囲で指定します。|
-
-|戻り値|条件|
-|--|--|
-|PSG_MML_SUCCESS|関数が正常に終了した場合。|
-|PSG_MML_OUT_OF_SLOT|範囲外のスロットが指定された場合。|
-|PSG_MML_NOT_INITIALIZED|指定したスロットが初期化されていない場合。|
-
-
-### psg_mml_get_play_state
-
-MMLの演奏状態を取得します。演奏状態は引数p_outが指す変数に格納されます。
-
-```c
-psg_mml_t  psg_mml_get_play_state(
-      uint8_t slot
-    , PSG_MML_PLAY_STATE_t *p_out
-    );
-```
-
-|引数|説明|
-|--|--|
-|slot|演奏状態を取得するスロット番号を0から1の範囲で指定します。|
-|p_out|現在の演奏状態を格納する変数へのポインタを指定します。|
-
-|戻り値|条件|
-|--|--|
-|PSG_MML_SUCCESS|関数が正常に終了した場合。|
-|PSG_MML_OUT_OF_SLOT|範囲外のスロットが指定された場合。|
-|PSG_MML_NOT_INITIALIZED|指定したスロットが初期化されていない場合。|
-
-#### PSG_MML_PLAY_STATE_t
-
-|列挙子|説明|
-|--|--|
-|E_PSG_MML_PLAY_STATE_STOP|演奏停止中|
-|E_PSG_MML_PLAY_STATE_PLAY|演奏中|
-|E_PSG_MML_PLAY_STATE_END|演奏終了|
-
-
-## Configuration
-
-以下の定数およびマクロをpsg_mml_conf.h内で定義することができます。
-このヘッダのテンプレートとして、psg_mml_conf_template.hを用意しています。
-環境に合わせてこのテンプレートの内容を編集し、ファイル名をpsg_mml_conf.hにリネームしてご使用ください。
-
-### PSG_MML_FIFO_SCALE
-
-MMLのデコード情報を格納するFIFOの長さを変更できます。この定数のデフォルトは8です。
-各楽音チャンネルのFIFOには，少なくともこの値で指定した個数分の音符および休符を格納することができます。
-
-### PSG_MML_SHARE_SLOT0_DRIVER
-
-スロット0に登録したPSG書き込み関数を，スロット1と共有する場合に，この設定値をtrueにします。この設定値のデフォルトはtrueです。
-一つのPSGを使用して演奏スロットを二つ使用する場合，この設定値をtrueにします。この場合，スロット0および1に登録したMMLを同時に演奏すると，スロット1に優先的に楽音チャンネルを割り当て，余ったチャンネルをスロット0に割り当てます。
-
-### PSG_MML_DISABLE_PERIODIC_CONTROL()
-
-psg_mml_periodic_control()の実行開始を禁止する区間に入った際に，このマクロが実行されます。
-psg_mml_periodic_control()の実行が，他の関数とは別スレッドで動作している場合，このマクロに実行開始を抑止する処理を記述する必要があります。
-このマクロのデフォルトは空です。
-
-なお，このマクロを実行する関数は，後述のマクロPSG_MML_ENABLE_PERIODIC_CONTROL()を実行してから終了するため，
-関数処理終了後にpsg_mml_periodic_control()関数の抑止を継続するようなことはありません。
-
-**NOTE:**
-psg_mml_periodic_control()実行中は，他のpsg_mmlの関数が実行されないようにする必要があります。
-
-### PSG_MML_ENABLE_PERIODIC_CONTROL()
-
-psg_mml_periodic_control()の実行開始を禁止する区間から抜ける際に、このマクロが実行されます。このマクロのデフォルトは空です。
-マクロPSG_MML_DISABLE_PERIODIC_CONTROL()に抑止処理を記述した場合、このマクロに抑止解除処理を記述する必要があります。
-
-### PSG_MML_HOOK_START_PERIODIC_CONTROL()
-
-psg_mml_periodic_control()関数の実行開始時このマクロ関数が実行されます。このマクロ関数のデフォルトは空です。
-
-### PSG_MML_HOOK_END_PERIODIC_CONTROL()
-
-psg_mml_periodic_control()関数の実行終了時にこのマクロ関数が実行されます。このマクロ関数のデフォルトは空です。
-
-### PSG_MML_ASSERT(TF)
-
-デバッグ用マクロ。assertによる条件検証は、このマクロを使用して行われます。このマクロのデフォルトは空です。
-なお、このマクロはローカル関数内でのみ実行されます。
 
 # License
 
