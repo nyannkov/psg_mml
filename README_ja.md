@@ -34,8 +34,7 @@ psg_mmlはPSG音源用のサウンドミドルウェアです。
 本ミドルウェアでは、スロットと呼ばれるオブジェクトにMMLを登録してPSGの制御を行います。
 スロットは二つ存在し、それぞれ0番、1番と番号で管理されています。
 単純にメロディを演奏する場合は、通常、0番のスロットを使用します。
-二つのスロットを使用した場合の挙動は、設定値[PSG_MML_SHARE_SLOT0_DRIVER](#PSG_MML_SHARE_SLOT0_DRIVER)の値によって変化します。
-
+スロットを二つ使用した場合の挙動については、設定値[PSG_MML_SHARE_SLOT0_DRIVER](#PSG_MML_SHARE_SLOT0_DRIVER)の説明を参照ください。
 ```c
 psg_mml_t psg_mml_init(
     uint8_t slot

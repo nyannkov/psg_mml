@@ -34,7 +34,7 @@ Initializes the specified slot.
 This middleware controls PSG by registering MML in objects called slots.
 There are two slots, which are numbered 0 and 1 respectively.
 Slot 0 is usually used to simply play a melody.
-The behavior when using two slots changes depending on the setting value [PSG_MML_SHARE_SLOT0_DRIVER](#PSG_MML_SHARE_SLOT0_DRIVER).
+For the behavior when using two slots, see the description of the setting value [PSG_MML_SHARE_SLOT0_DRIVER](#PSG_MML_SHARE_SLOT0_DRIVER).
 
 ```c
 psg_mml_t psg_mml_init(
