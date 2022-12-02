@@ -308,8 +308,7 @@ This macro function is executed at the end of execution of the psg_mml_periodic_
 
 ### PSG_MML_ASSERT(TF)
 
-A debugging macro; conditional validation by assert is performed using this macro. This macro defaults to empty.
-Note that this macro is only executed within a local function.
+Macro for debugging. The default for this macro is empty. This macro runs on conditional validation within a local function.
 
 
 # MML instructions
