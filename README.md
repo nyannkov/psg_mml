@@ -12,11 +12,11 @@ psg_mml is a sound middleware for PSG sound source.
 
 # Examples
 
-1. [music_box](examples/music_box)
+## [music_box](examples/music_box)
 
-This is a sample program that plays music when the power is turned on.
+This is a sample program that plays a melody after turning on the power.
 
- - Sample when using Raspberrypi pico + YMZ294: [rpi_pico_ymz294](examples/music_box/boards/rpi_pico)
+  - When using Raspberrypi pico + YMZ294: [rpi_pico_ymz294](examples/music_box/boards/rpi_pico)
 
 # Demo
 Under preparation.
@@ -27,10 +27,14 @@ Under preparation.
 
 ### psg_mml_init
 
-Initialize the specified MML slot.
+Initializes the specified slot.
 
-**NOTE:**
-Periodic execution of the function psg_mml_periodic_control() must be stopped while this function is running.
+#### About slots
+
+This middleware controls PSG by registering MML in objects called slots.
+There are two slots, which are numbered 0 and 1 respectively.
+Slot 0 is usually used to simply play a melody.
+The behavior when using two slots changes depending on the setting value [PSG_MML_SHARE_SLOT0_DRIVER](#PSG_MML_SHARE_SLOT0_DRIVER).
 
 ```c
 psg_mml_t psg_mml_init(
@@ -43,7 +47,7 @@ psg_mml_t psg_mml_init(
 |--|--|
 |slot|Specifies the slot number to initialize, in the range of 0 to 1.|
 |tick_hz|Specifies the call rate of the function psg_mml_periodic_control(). The unit is Hz. The reciprocal of this value is the performance time resolution.|
-|p_write|Specifies a pointer to a function that writes data to the PSG. Since the write function is executed in psg_mml_init(), PSG initialization must be executed in advance.|
+|p_write|Specifies a pointer to a function that writes data to the PSG. Note that the write function is executed within psg_mml_init(), so the PSG must be initialized before executing this function.|
 
 |Return values|Conditions|
 |--|--|
@@ -51,14 +55,16 @@ psg_mml_t psg_mml_init(
 |PSG_MML_OUT_OF_SLOT|An out-of-range slot is specified.|
 
 
-#### About slots
-
 This middleware provides two slots for loading MML (slots 0 and 1) so that different music data can be played simultaneously.
 The behavior of simultaneous MML playback using these slots depends on the value of the setting [PSG_MML_SHARE_SLOT0_DRIVER] (#PSG_MML_SHARE_SLOT0_DRIVER).
 
+**NOTE:**
+Periodic execution of the function psg_mml_periodic_control() must be stopped while this function is running.
+
+
 ### psg_mml_deinit
 
-Terminates the specified MML slot.
+Terminates the specified slot.
 
 **NOTE:**
 Periodic execution of the function psg_mml_periodic_control() must be stopped while this function is running.
@@ -125,10 +131,10 @@ psg_mml_t  psg_mml_load_text(
 
 ### psg_mml_decode
 
-Decodes the loaded MML. The decoded result is sent to psg_mml_periodic_control() through FIFO.
-This function does not decode MML at once, but works to decode MML for each channel one instruction at a time and returns the result.
-Since the location of the next MML text to be decoded is retained internally, this function can be executed repeatedly to decode MML one after another.
-When all MML text has been decoded, the function returns PSG_MML_DECODE_END.
+Decode the loaded MML. The decoded result is sent to psg_mml_periodic_control() through FIFO.
+This function does not decode the MML at once, but decodes the MML of each channel one instruction at a time and then returns the result.
+Since the position of the MML text to be decoded next is held in the slot, MML decoding can be performed one by one by repeatedly executing this function.
+After decoding all MML, this function returns PSG_MML_DECODE_END.
 
 ```c
 psg_mml_t  psg_mml_decode(
@@ -249,9 +255,10 @@ psg_mml_t  psg_mml_get_play_state(
 
 ## Configuration
 
-The following constants and macros can be defined in psg_mml_conf.h.
+The following configuration constants and macros can be written in psg_mml_conf.h.
 psg_mml_conf_template.h is provided as a template for this header.
 Please edit the contents of this template according to your environment and rename the file name to psg_mml_conf.h.
+Each setting value and macro are described here.
 
 ### PSG_MML_FIFO_SCALE
 
@@ -286,9 +293,6 @@ The default for this macro is empty.
 Note that the function that executes this macro ends after executing the macro PSG_MML_ENABLE_PERIODIC_CONTROL() described later.
 Therefore, it does not continue to suppress the psg_mml_periodic_control() function after the function processing ends.
 
-**NOTE:**
-It is necessary to prevent other psg_mml functions from being executed while psg_mml_periodic_control() is running.
-
 ### PSG_MML_ENABLE_PERIODIC_CONTROL()
 
 This macro is executed when exiting the section that prohibits the start of execution of psg_mml_periodic_control(). The default for this macro is empty.
@@ -309,6 +313,9 @@ Note that this macro is only executed within a local function.
 
 
 # MML instructions
+
+This section describes each MML command used in psg_mml.
+
 ## Basic command
 
 ### A-G [&lt;accidental&gt;] [&lt;length&gt;] [&lt;dot&gt;]
@@ -500,7 +507,7 @@ Raises the octave specified by the O command.
 L4AB>C
 ```
 
-### ","
+### ,
 
 MML of each part can be concatenated with commas. Since PSG has 3 tone channels, up to 3 MMLs can be concatenated.
 
