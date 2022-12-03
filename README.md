@@ -25,7 +25,7 @@ Under preparation.
 # Details
 ## API reference
 
-|API Name|Brief|
+|API Name|Summary|
 |--|--|
 |[psg_mml_init](#psg_mml_init)|Initializes the specified slot. |
 |[psg_mml_deinit](#psg_mml_deinit)|Terminates the specified slot.|
@@ -327,7 +327,7 @@ Macro for debugging. The default for this macro is empty. This macro runs on con
 
 This section describes each MML command used in psg_mml.
 
-|Command name|Brief|
+|Command name|Summary|
 |--|--|
 |[A-G](#a-g-accidental-length-dot)|Outputs the sound of the specified note name. |
 |[N](#n-note-number-dot)|Specify the note number and output the sound. |
@@ -341,11 +341,11 @@ This section describes each MML command used in psg_mml.
 |[Q](#q-gate-time)|Specify the note gate time. |
 |[H](#h-length-dot)| Outputs noise sound. |
 |[I](#i-frequency)|Sets the frequency of the noise. |
-|[&lt;](#lt)|O Lowers the octave specified by the command. |
-|[&gt;](#gt)|O Raises the octave specified by the command. |
+|[&lt;](#lt)|Decrease the octave value set by O-command. |
+|[&gt;](#gt)|Increase the octave value set by O-command. |
 |[,](#comma)|MML is concatenated into a chord. |
-|[&](#-octave-settings)|Supports slurs and ties. |
-|[[]](#-loop-number--)|Plays MML in [] loop. |
+|[&](#-octave-settings)|Plays like slurs and ties. |
+|[[]](#-loop-number--)|Specify the loop section. |
 |[$E](#e-enabled)|Set ON/OFF of volume control by software envelope. |
 |[$A](#a-attack)|Specifies the attack time of the software envelope. |
 |[$H](#h-hold)|Specifies the hold time of the software envelope. |
@@ -358,8 +358,7 @@ This section describes each MML command used in psg_mml.
 |[$L](#l-low-frequency)|Sets the modulation frequency of the software LFO. |
 |[$T](#t-delay-dot)|Specifies the time from the start of sound output until the software LFO operates. |
 |[$B](#b-bias)|Bias the frequency of the output sound. |
-|[$P](#p-pitchbend-level)|Gently increases or decreases the frequency of the output sound until output stops. |
-
+|[$P](#p-pitchbend-level)|Smoothly increases or decreases the frequency of the output sound until output stops. |
 
 ## Basic command
 
