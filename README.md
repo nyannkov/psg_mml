@@ -127,7 +127,7 @@ psg_mml_t  psg_mml_load_text(
 |bit|Field|Description|
 |--|--|--|
 |15-1|-|Reserved.|
-|0|RH_LEN|- 0: The default value for the R, H command is 4.<br> - 1: The default value for the R and H commands is the value specified by the L command.|
+|0|RH_LEN|Switches the default value when the R,H command omits the note length specification. <br> - 0: The default value for note length is 4. <br> - 1: The default note length is the value specified with the L command.|
 
 ### psg_mml_decode
 
