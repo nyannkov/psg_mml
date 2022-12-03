@@ -14,7 +14,7 @@ psg_mml is a sound middleware for PSG sound source.
 
 ## [music_box](examples/music_box)
 
-This is a sample program that plays a melody after turning on the power.
+This is a sample program that plays "Yurikago no uta" after turning on the power.
 
   - When using Raspberrypi pico + YMZ294: [rpi_pico_ymz294](examples/music_box/boards/rpi_pico)
 
@@ -388,7 +388,7 @@ Specify the note number and output the sound. The note length follows the value 
 
 **Example:**
 ```
-O4CEG. N36N40N43.
+L4O4CEG.R8 N36N40N43.R8
 ```
 
 ### R [&lt;length&gt;] [&lt;dot&gt;]
@@ -402,7 +402,9 @@ Insert a rest.
 
 **Example:**
 ```
-CE.R8G
+L4
+CR8 C16R16 CR
+CR8 C16R16 CR
 ```
 
 ### H [&lt;length&gt;] [&lt;dot&gt;]
@@ -445,7 +447,7 @@ This value can also be applied to the R and H commands depending on the value of
 
 **Example:**
 ```
-L16CDE
+L4CDE2L16CDECDECDE
 ```
 
 ### V &lt;volume&gt;
@@ -474,8 +476,8 @@ If you want to turn off this volume control, execute the V command.
 
 **Example:**
 ```
+V15CDER4
 L4S0M3000CDER4
-L4S2M3000CDER4
 V15CDER4
 ```
 
@@ -504,7 +506,10 @@ Specifies the octave of the note specified by A-G. Octave defaults to 4.
 
 **Example:**
 ```
-O4ABO5C
+L4
+O4 CDE2
+O5 CDE2
+O3 CDE2
 ```
 
 ### Q &lt;gate-time&gt;
@@ -517,7 +522,9 @@ Specifies the note gate time. The default value is 8 (8/8=100%).
 
 **Example:**
 ```
-L4Q3CDER4
+L16CCCCCCCC
+R4
+Q4CCCCCCCC
 ```
 
 ### I &lt;frequency&gt;
@@ -608,6 +615,18 @@ Sets ON/OFF of volume control by software envelope. This value defaults to OFF.
 |--|--|
 |&lt;enabled&gt;|Set in the range from 0 to 1. 0 corresponds to OFF and 1 to ON.|
 
+**Example:**
+```
+V15L4O4
+$A0$H100$D100$S90$F2000$R0
+
+$E0
+CDE2
+
+$E1
+CDE2
+```
+
 ### $A &lt;attack&gt;
 
 Specifies the rise time of the sound (the arrival time from 0 to the volume set by the V command).
@@ -664,10 +683,21 @@ psg_mml has a software LFO. By enabling this function, you can output a sound wi
 
 Sets ON/OFF for the software LFO. This value defaults to OFF.
 
-
 |Values|Description|
 |--|--|
 |&lt;mode&gt;|Sets the software LFO mode from 0 to 1. 0 corresponds to OFF and 1 to ON (modulated by triangular wave).|
+
+**Example:**
+```
+V15L4O4
+$J4$L80$T8
+
+$M0
+CDE2
+
+$M1
+CDE2
+```
 
 ### $J &lt;depth&gt;
 
@@ -705,6 +735,25 @@ Bias the frequency of the output sound. The default value for bias is 0.
 |--|--|
 |&lt;bias&gt;|Specify the bias in the range (-2880) to 2880. If the bias value is n, the frequency of the output sound will be the value multiplied by 2^(n/360).|
 
+
+**Example1:**
+```
+V15L4O4
+CDE2
+$B30 CDE2
+$B60 CDE2
+$B360 CDE2
+```
+
+**Example2:**
+```
+V15L1O4
+AA
+,
+V15L1O4
+A$B1A
+```
+
 ### $P &lt;pitchbend-level&gt;
 
 Smoothly increases or decreases the frequency of the output sound to the value specified by pitchbend-level until the output stops. This value defaults to 0.
@@ -712,6 +761,13 @@ Smoothly increases or decreases the frequency of the output sound to the value s
 |Values|Description|
 |--|--|
 |&lt;pitchbend-level&gt;|Specifies the pitch bend level in the range from (-2880) to 2880. If the specified value is n, the frequency of the output sound changes smoothly up to the final value multiplied by 2^(n/360).|
+
+**Example:**
+```
+V15L16O4
+$P-360 CDEFGAB>C<
+$P360 CDEFGAB>C<
+```
 
 # License
 
