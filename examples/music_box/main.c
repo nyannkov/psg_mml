@@ -34,7 +34,7 @@
  *
  * */
 static const char *EXAMPLE_MML = 
-"@T100"
+"@T93"
 "[2"
     "$E1$A0$H100$D100$S90$F2500$R0"
     "$M1$J2$L40$T8."
@@ -44,7 +44,7 @@ static const char *EXAMPLE_MML =
     "G.G8GF8G8A#.A#8>C<A#G.A#8GFD#1"
 "],"
 ""
-"T100"
+"T93"
 "[2"
     "$E1$A0$H100$D100$S90$F2500$R0"
     "$M1$J2$L40$T8."
@@ -56,7 +56,7 @@ static const char *EXAMPLE_MML =
     "G.G8GF8G8A#.A#8>C<A#G.A#8GFD#2...."
 "],"
 ""
-"T100"
+"T93"
 "[2"
     "$E1$A0$H100$D100$S90$F4000$R0"
     "$M1$J2$L40$T8."

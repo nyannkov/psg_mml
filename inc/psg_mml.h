@@ -30,6 +30,8 @@ extern "C" {
 
 #include "psg_mml_conf.h"
 
+#define PSG_MML_VERSION                         "0.0.1"
+
 #define PSG_MML_SLOT_TOTAL_NUM                  (2)
 
 typedef enum
