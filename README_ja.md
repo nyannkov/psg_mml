@@ -323,6 +323,40 @@ psg_mml_periodic_control()関数終了時に，このマクロ関数が実行さ
 
 ここではpsg_mmlで使用するMMLの各コマンドについて記述します。
 
+|コマンド名|概要|
+|--|--|
+|[A-G](#A-G-[&lt;accidental&gt;]-[&lt;length&gt;]-[&lt;dot&gt;])|指定した音名の音を出力します。|
+|[N](#N-&lt;note-number&gt;-[&lt;dot&gt;])|ノートナンバーを指定して音を出力します。|
+|[R](#R-[&lt;length&gt;]-[&lt;dot&gt;])|休符を挿入します。|
+|[T](#T-&lt;tempo&gt;)|テンポを設定します。|
+|[L](#L-&lt;length&gt;-[&lt;dot&gt;])|音の長さを設定します。|
+|[V](#V-&lt;volume&gt;)|音量を設定します。|
+|[S](#S-&lt;shape&gt;)|エンベロープ発生器による音量制御に切り替えます。|
+|[M](#M-&lt;frequency&gt;)|エンベロープ周波数を指定します。|
+|[O](#O-&lt;octave&gt;)|A-Gで指定する音のオクターブを指定します。|
+|[Q](#Q-&lt;gate-time&gt;)|音符のゲートタイムを指定します。|
+|[H](#H-[&lt;length&gt;]-[&lt;dot&gt;])|ノイズ音を出力します。|
+|[I](#I-&lt;frequency&gt;)|ノイズの周波数を設定します。|
+|[&lt;](#&lt;)|Oコマンドで指定したオクターブを一つ下げます。|
+|[&gt;](#&gt;)|Oコマンドで指定したオクターブを一つ上げます。|
+|[,](#,)|MMLを連結して和音にします。|
+|[&](#&-[&lt;octave-settings&gt;])|スラーやタイに対応します。|
+|[[]](#[-[&lt;loop-number&gt;]-...-])|[]内のMMLをループ再生します。|
+|[$E](#$E-&lt;enabled&gt;)|ソフトウェアエンベロープによる音量制御のON／OFFを設定します。|
+|[$A](#$A-&lt;attack&gt;)|ソフトウェアエンベロープのAttack時間を指定します。|
+|[$H](#$H-&lt;hold&gt;)|ソフトウェアエンベロープのHold時間を指定します。|
+|[$D](#$D-&lt;decay&gt;)|ソフトウェアエンベロープのDecay時間を指定します。|
+|[$S](#$S-&lt;sustain&gt;)|ソフトウェアエンベロープのSustain時間を指定します。|
+|[$F](#$F-&lt;fade&gt;)|ソフトウェアエンベロープのFade時間を指定します。|
+|[$R](#$R-&lt;release&gt;)|ソフトウェアエンベロープのRelease時間を指定します。|
+|[$M](#$M-&lt;mode&gt;)|ソフトウェアLFOのモードを設定します。|
+|[$J](#$J-&lt;depth&gt;)|ソフトウェアLFOの変調深さを指定します。|
+|[$L](#$L-&lt;low-frequency&gt;)|ソフトウェアLFOの変調周波数を設定します。|
+|[$T](#$T-&lt;delay&gt;-[&lt;dot&gt;])|音の出力を開始してからソフトウェアLFOが動作するまでの時間を指定します。|
+|[$B](#$B-&lt;bias&gt;)|出力する音の周波数にバイアスをかけます。|
+|[$P](#$P-&lt;pitchbend-level&gt;)|出力した音の周波数を出力が停止するまでの間，なめらかに増加または減少させます。|
+
+
 ## 基本コマンド
 
 ### A-G [&lt;accidental&gt;] [&lt;length&gt;] [&lt;dot&gt;]
