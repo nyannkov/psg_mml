@@ -29,9 +29,9 @@ psg_mmlはPSG音源用のサウンドミドルウェアです。
 |--|--|
 |[psg_mml_init](#psg_mml_init)|指定したスロットの初期化を行います。|
 |[psg_mml_deinit](#psg_mml_deinit)|指定したスロットの終了処理を行います。|
-|[psg_mml_periodic_control](#psg_mml_periodic_control)|周期的に実行してPSGを制御します。|
 |[psg_mml_load_text](#psg_mml_load_text)|指定したスロットにMMLをロードします。|
 |[psg_mml_decode](#psg_mml_decode)|ロードしたMMLをデコードします。|
+|[psg_mml_periodic_control](#psg_mml_periodic_control)|ロードしたMMLのデコード情報を読み取りPSGを制御します。|
 |[psg_mml_play_start](#psg_mml_play_start)|ロードしたMMLの演奏を開始します。|
 |[psg_mml_play_restart](#psg_mml_play_restart)|ロードしたMMLをはじめから演奏し直します。|
 |[psg_mml_play_stop](#psg_mml_play_stop)|ロードしたMMLの演奏を停止します。|

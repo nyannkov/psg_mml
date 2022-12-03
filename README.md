@@ -28,10 +28,10 @@ Under preparation.
 |API Name|Brief|
 |--|--|
 |[psg_mml_init](#psg_mml_init)|Initializes the specified slot. |
-|[psg_mml_deinit](#psg_mml_deinit)|Performs termination processing for the specified slot. |
-|[psg_mml_periodic_control](#psg_mml_periodic_control)|Periodic execution to control PSG. |
+|[psg_mml_deinit](#psg_mml_deinit)|Terminates the specified slot.|
 |[psg_mml_load_text](#psg_mml_load_text)|Loads MML into the specified slot. |
 |[psg_mml_decode](#psg_mml_decode)|Decodes the loaded MML. |
+|[psg_mml_periodic_control](#psg_mml_periodic_control)|Controls PSG by reading the decoding information of the loaded MML. |
 |[psg_mml_play_start](#psg_mml_play_start)|Start playing the loaded MML. |
 |[psg_mml_play_restart](#psg_mml_play_restart)|Restarts the loaded MML from the beginning. |
 |[psg_mml_play_stop](#psg_mml_play_stop)|Stop playing the loaded MML. |
