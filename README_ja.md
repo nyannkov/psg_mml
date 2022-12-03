@@ -25,6 +25,18 @@ psg_mmlはPSG音源用のサウンドミドルウェアです。
 
 ## API reference
 
+|API名|概要|
+|--|--|
+|[psg_mml_init](#psg_mml_init)|指定したスロットの初期化を行います。|
+|[psg_mml_deinit](#psg_mml_deinit)|指定したスロットの終了処理を行います。|
+|[psg_mml_periodic_control](#psg_mml_periodic_control)|周期的に実行してPSGを制御します。|
+|[psg_mml_load_text](#psg_mml_load_text)|指定したスロットにMMLをロードします。|
+|[psg_mml_decode](#psg_mml_decode)|ロードしたMMLをデコードします。|
+|[psg_mml_play_start](#psg_mml_play_start)|ロードしたMMLの演奏を開始します。|
+|[psg_mml_play_restart](#psg_mml_play_restart)|ロードしたMMLをはじめから演奏し直します。|
+|[psg_mml_play_stop](#psg_mml_play_stop)|ロードしたMMLの演奏を停止します。|
+|[psg_mml_get_play_state](#psg_mml_get_play_state)|ロードしたMMLの演奏状態を取得します。|
+
 ### psg_mml_init
 
 指定したスロットの初期化を行います。
@@ -201,7 +213,7 @@ psg_mml_t  psg_mml_play_restart(
 
 ### psg_mml_play_stop
 
-MMLの演奏を停止します。
+ロードしたMMLの演奏を停止します。
 
 ```c
 psg_mml_t  psg_mml_play_stop(
@@ -222,7 +234,7 @@ psg_mml_t  psg_mml_play_stop(
 
 ### psg_mml_get_play_state
 
-MMLの演奏状態を取得します。演奏状態は引数p_outが指す変数に格納されます。
+ロードしたMMLの演奏状態を取得します。演奏状態は引数p_outが指す変数に格納されます。
 
 ```c
 psg_mml_t  psg_mml_get_play_state(
