@@ -66,13 +66,8 @@ psg_mml_t psg_mml_init(
 |PSG_MML_SUCCESS|The function completed successfully.|
 |PSG_MML_OUT_OF_SLOT|An out-of-range slot is specified.|
 
-
-This middleware provides two slots for loading MML (slots 0 and 1) so that different music data can be played simultaneously.
-The behavior of simultaneous MML playback using these slots depends on the value of the setting [PSG_MML_SHARE_SLOT0_DRIVER] (#PSG_MML_SHARE_SLOT0_DRIVER).
-
 **NOTE:**
 Periodic execution of the function psg_mml_periodic_control() must be stopped while this function is running.
-
 
 ### psg_mml_deinit
 
