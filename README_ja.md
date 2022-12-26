@@ -17,9 +17,7 @@ psg_mmlはPSG音源用のサウンドミドルウェアです。
 電源投入後に，ゆりかごのうたを演奏するサンプルプログラムです。
 
  - Raspberrypi pico + YMZ294を使用した場合: [rpi_pico_ymz294](examples/music_box/boards/rpi_pico)
-
-# Demo
-準備中
+   [演奏動画](https://www.youtube.com/watch?v=CFmfhx5PqrA)
 
 # Details
 

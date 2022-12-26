@@ -17,10 +17,7 @@ psg_mml is a sound middleware for PSG sound source.
 This is a sample program that plays "Yurikago no uta" after turning on the power.
 
   - When using Raspberrypi pico + YMZ294: [rpi_pico_ymz294](examples/music_box/boards/rpi_pico)
-
-# Demo
-Under preparation.
-
+   [Movie](https://www.youtube.com/watch?v=CFmfhx5PqrA)
 
 # Details
 ## API reference
