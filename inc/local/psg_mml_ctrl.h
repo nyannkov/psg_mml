@@ -84,7 +84,6 @@ typedef struct
 typedef struct
 {
     uint16_t note_on;
-    uint16_t note_off;
     uint16_t gate; 
     uint16_t soft_env_cnt;
     uint16_t lfo_delay_cnt;

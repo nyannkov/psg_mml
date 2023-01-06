@@ -114,8 +114,7 @@ typedef struct
 
 typedef struct
 {
-    uint16_t    time;
-    uint16_t    type;
+    uint8_t     type;
     union
     {
         uint8_t byte[8];
@@ -134,11 +133,12 @@ typedef struct
 #define PSG_MML_FIFO_SCALE          (8)
 #endif
 
-#define MAX_PSG_MML_FIFO_LENGTH     (MAX_PSG_MML_MSG_NUM*PSG_MML_FIFO_SCALE)
-
-#if MAX_PSG_MML_FIFO_LENGTH < (MAX_PSG_MML_MSG_NUM*2)
-#error MAX_PSG_MML_FIFO_LENGTH must be greater equal to (MAX_PSG_MML_MSG_NUM*2).
+#if PSG_MML_FIFO_SCALE < 2 
+#error PSG_MML_FIFO_SCALE must be greater equal to 2.
 #endif
+
+#define MAX_PSG_MML_FIFO_LENGTH     (MAX_PSG_MML_MSG_NUM*PSG_MML_FIFO_SCALE+1)
+
 #if MAX_PSG_MML_FIFO_LENGTH > 30000 
 #error MAX_PSG_MML_FIFO_LENGTH must be less equal to 30,000.
 #endif

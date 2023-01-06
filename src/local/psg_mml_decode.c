@@ -698,7 +698,6 @@ psg_mml_decode_t psg_mml_decode_get_message(PSG_MML_DECODER_t *p_decoder, uint8_
     {
         p_decoder->mml_text_info.channel[ch].reset_state = false;
 
-        p_out->msg[0].time = 0;
         p_out->msg[0].type = MSG_TYPE_DECODE_STATUS;
         p_out->msg[0].data.decode_status.status = DECODE_STATUS_START;
         p_out->msg_cnt = 1;
@@ -711,7 +710,6 @@ psg_mml_decode_t psg_mml_decode_get_message(PSG_MML_DECODER_t *p_decoder, uint8_
         if ( !p_decoder->mml_text_info.channel[ch].end_state )
         {
             p_decoder->mml_text_info.channel[ch].end_state = true;
-            p_out->msg[0].time = 0;
             p_out->msg[0].type = MSG_TYPE_DECODE_STATUS;
             p_out->msg[0].data.decode_status.status = DECODE_STATUS_END;
             p_out->msg_cnt = 1;
@@ -1116,13 +1114,11 @@ static void mml_decode_operate_mixer(PSG_MML_DECODER_t *p_decoder, uint8_t ch, P
             tp_end = shift_tp(tp, p_decoder->tone_params.channel[ch].q24_pitchbend);
         }
 
-        p_out->msg[index].time = 0;
         p_out->msg[index].type = MSG_TYPE_SETTINGS;
         p_out->msg[index].data.settings.addr = 2*ch;
         p_out->msg[index].data.settings.data = U16_LO(tp);
         index++;
 
-        p_out->msg[index].time = 0;
         p_out->msg[index].type = MSG_TYPE_SETTINGS;
         p_out->msg[index].data.settings.addr = 2*ch + 1;
         p_out->msg[index].data.settings.data = U16_HI(tp);
@@ -1137,7 +1133,6 @@ static void mml_decode_operate_mixer(PSG_MML_DECODER_t *p_decoder, uint8_t ch, P
     /* Set NP */
     if ( note_type == E_NOTE_TYPE_NOISE )
     {
-        p_out->msg[index].time = 0;
         p_out->msg[index].type = MSG_TYPE_SETTINGS;
         p_out->msg[index].data.settings.addr = 0x06;
         p_out->msg[index].data.settings.data = p_decoder->tone_params.np;
@@ -1147,7 +1142,6 @@ static void mml_decode_operate_mixer(PSG_MML_DECODER_t *p_decoder, uint8_t ch, P
     if ( ( note_type == E_NOTE_TYPE_TONE ) 
       || ( note_type == E_NOTE_TYPE_NOISE ) )
     {
-        p_out->msg[index].time = 0;
         p_out->msg[index].type = MSG_TYPE_SETTINGS;
         p_out->msg[index].data.settings.addr = ch + 0x08;
         p_out->msg[index].data.settings.data = p_decoder->tone_params.channel[ch].vol_ctrl;
@@ -1156,13 +1150,11 @@ static void mml_decode_operate_mixer(PSG_MML_DECODER_t *p_decoder, uint8_t ch, P
         if ( (p_decoder->tone_params.channel[ch].vol_ctrl & (1<<4)) != 0 )
         {
             /* To reload 5bit counter of the envelope generator. */
-            p_out->msg[index].time = 0;
             p_out->msg[index].type = MSG_TYPE_SETTINGS;
             p_out->msg[index].data.settings.addr = 0x0B;
             p_out->msg[index].data.settings.data = U16_LO(p_decoder->tone_params.ep);
             index++;
 
-            p_out->msg[index].time = 0;
             p_out->msg[index].type = MSG_TYPE_SETTINGS;
             p_out->msg[index].data.settings.addr = 0x0C;
             p_out->msg[index].data.settings.data = U16_HI(p_decoder->tone_params.ep);
@@ -1171,7 +1163,6 @@ static void mml_decode_operate_mixer(PSG_MML_DECODER_t *p_decoder, uint8_t ch, P
             if ( !p_decoder->tone_params.channel[ch].legato_effect )
             {
                 /* Set envelope shape */
-                p_out->msg[index].time = 0;
                 p_out->msg[index].type = MSG_TYPE_SETTINGS;
                 p_out->msg[index].data.settings.addr = 0x0D;
                 p_out->msg[index].data.settings.data = p_decoder->tone_params.env_shape;
@@ -1179,7 +1170,6 @@ static void mml_decode_operate_mixer(PSG_MML_DECODER_t *p_decoder, uint8_t ch, P
             }
 
             /* Software-Envelope generator(Turn OFF regardless of the set value.) */
-            p_out->msg[index].time = 0;
             p_out->msg[index].type = MSG_TYPE_SOFT_ENV_1;
             p_out->msg[index].data.soft_env_1.mode = SOFT_ENVELOPE_MODE_OFF;
             index++;
@@ -1187,7 +1177,6 @@ static void mml_decode_operate_mixer(PSG_MML_DECODER_t *p_decoder, uint8_t ch, P
         else
         {
             /* Software-Envelope generator */
-            p_out->msg[index].time = 0;
             p_out->msg[index].type = MSG_TYPE_SOFT_ENV_1;
             p_out->msg[index].data.soft_env_1.mode      = p_decoder->tone_params.channel[ch].soft_env_mode;
             p_out->msg[index].data.soft_env_1.top_volume= p_decoder->tone_params.channel[ch].vol_ctrl&0xF;
@@ -1195,7 +1184,6 @@ static void mml_decode_operate_mixer(PSG_MML_DECODER_t *p_decoder, uint8_t ch, P
             p_out->msg[index].data.soft_env_1.legato_effect = (p_decoder->tone_params.channel[ch].legato_effect ? 1 : 0);
             index++;
 
-            p_out->msg[index].time = 0;
             p_out->msg[index].type = MSG_TYPE_SOFT_ENV_2;
             p_out->msg[index].data.soft_env_2.attack_tk_hi = U16_HI(p_decoder->tone_params.channel[ch].soft_env_attack_tk);
             p_out->msg[index].data.soft_env_2.attack_tk_lo = U16_LO(p_decoder->tone_params.channel[ch].soft_env_attack_tk);
@@ -1205,7 +1193,6 @@ static void mml_decode_operate_mixer(PSG_MML_DECODER_t *p_decoder, uint8_t ch, P
             p_out->msg[index].data.soft_env_2.decay_tk_lo  = U16_LO(p_decoder->tone_params.channel[ch].soft_env_decay_tk);
             index++;
 
-            p_out->msg[index].time = 0;
             p_out->msg[index].type = MSG_TYPE_SOFT_ENV_3;
             p_out->msg[index].data.soft_env_3.fade_tk_hi    = U16_HI(p_decoder->tone_params.channel[ch].soft_env_fade_tk);
             p_out->msg[index].data.soft_env_3.fade_tk_lo    = U16_LO(p_decoder->tone_params.channel[ch].soft_env_fade_tk);
@@ -1219,7 +1206,6 @@ static void mml_decode_operate_mixer(PSG_MML_DECODER_t *p_decoder, uint8_t ch, P
     {
         if ( !p_decoder->tone_params.channel[ch].legato_effect )
         {
-            p_out->msg[index].time = 0;
             p_out->msg[index].type = MSG_TYPE_LFO;
             p_out->msg[index].data.lfo.mode  = p_decoder->tone_params.channel[ch].lfo_mode;
             p_out->msg[index].data.lfo.depth = p_decoder->tone_params.channel[ch].lfo_depth;
@@ -1257,7 +1243,6 @@ static void mml_decode_operate_mixer(PSG_MML_DECODER_t *p_decoder, uint8_t ch, P
                   : ( note_type == E_NOTE_TYPE_NOISE ) ? (0x01)
                   : (0x09);
 
-        p_out->msg[index].time = Q_INT(q12_note_on_time, 12);
         p_out->msg[index].type = (note_type == E_NOTE_TYPE_REST)
                                ? MSG_TYPE_NOTE_ON_REST
                                : MSG_TYPE_NOTE_ON;
@@ -1276,7 +1261,6 @@ static void mml_decode_operate_mixer(PSG_MML_DECODER_t *p_decoder, uint8_t ch, P
     if ( !is_start_legato_effect )
     {
         /* Note-OFF */
-        p_out->msg[index].time = 0;
         p_out->msg[index].type = MSG_TYPE_NOTE_OFF;
         p_out->msg[index].data.note_off.addr = PSG_REG_ADDR_MIXER;
         p_out->msg[index].data.note_off.data = 0x09<<ch;

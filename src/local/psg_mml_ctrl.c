@@ -241,7 +241,7 @@ static inline void proc_command(PSG_MML_CTRL_t *p_ctrl, uint8_t ch, const PSG_MM
 
     case MSG_TYPE_NOTE_ON:
 
-        p_time->note_on = p_psg_cmd->time;
+        p_time->note_on = U16(p_psg_cmd->data.note_on.note_on_time_tk_hi, p_psg_cmd->data.note_on.note_on_time_tk_lo);
         p_time->gate = U16(p_psg_cmd->data.note_on.gate_time_tk_hi, p_psg_cmd->data.note_on.gate_time_tk_lo);
         if ( p_soft_env->mode != SOFT_ENVELOPE_MODE_OFF )
         {
@@ -270,7 +270,7 @@ static inline void proc_command(PSG_MML_CTRL_t *p_ctrl, uint8_t ch, const PSG_MM
 
     case MSG_TYPE_NOTE_ON_REST:
 
-        p_time->note_on = p_psg_cmd->time;
+        p_time->note_on = U16(p_psg_cmd->data.note_on.note_on_time_tk_hi, p_psg_cmd->data.note_on.note_on_time_tk_lo);
         p_ctrl->reg[PSG_REG_ADDR_MIXER].data &= ~(uint8_t)(0x9uL<<ch); 
         p_ctrl->reg[PSG_REG_ADDR_MIXER].data |= p_psg_cmd->data.note_on.data;
         p_ctrl->reg[PSG_REG_ADDR_MIXER].flag |= (1<<ch);
@@ -498,7 +498,6 @@ void psg_mml_ctrl_init(PSG_MML_CTRL_t *p_ctrl, uint8_t use_channel_num)
 
         /* Initialize time */
         p_ctrl->channel[i].time.note_on = 0;
-        p_ctrl->channel[i].time.note_off = 0;
         p_ctrl->channel[i].time.gate = 0;
         p_ctrl->channel[i].time.soft_env_cnt = 0;
         p_ctrl->channel[i].time.lfo_delay_cnt = 0;
