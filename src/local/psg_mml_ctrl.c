@@ -233,16 +233,22 @@ static inline void proc_command(PSG_MML_CTRL_t *p_ctrl, uint8_t ch, const PSG_MM
         }
         break;
 
-    case MSG_TYPE_SETTINGS:
+    case MSG_TYPE_SETTINGS_1:
 
-        p_ctrl->reg[p_psg_cmd->data.settings.addr].data = p_psg_cmd->data.settings.data;
-        p_ctrl->reg[p_psg_cmd->data.settings.addr].flag = 1;
+        p_ctrl->reg[p_psg_cmd->data.settings_1.addr].data = p_psg_cmd->data.settings_1.data;
+        p_ctrl->reg[p_psg_cmd->data.settings_1.addr].flag = 1;
+        break;
+
+    case MSG_TYPE_SETTINGS_2:
+
+        p_time->gate = U16(p_psg_cmd->data.settings_2.gate_time_tk_hi, p_psg_cmd->data.settings_2.gate_time_tk_lo);
+        p_pitchbend->q12_tp_base= I2Q12( U16(p_ctrl->reg[2*ch+1].data, p_ctrl->reg[2*ch+0].data) );
+        p_pitchbend->q12_tp_end = I2Q12( U16(p_psg_cmd->data.settings_2.tp_end_hi, p_psg_cmd->data.settings_2.tp_end_lo) );
         break;
 
     case MSG_TYPE_NOTE_ON:
 
         p_time->note_on = U16(p_psg_cmd->data.note_on.note_on_time_tk_hi, p_psg_cmd->data.note_on.note_on_time_tk_lo);
-        p_time->gate = U16(p_psg_cmd->data.note_on.gate_time_tk_hi, p_psg_cmd->data.note_on.gate_time_tk_lo);
         if ( p_soft_env->mode != SOFT_ENVELOPE_MODE_OFF )
         {
             if ( !p_soft_env->legato_effect )
@@ -257,15 +263,11 @@ static inline void proc_command(PSG_MML_CTRL_t *p_ctrl, uint8_t ch, const PSG_MM
             p_lfo->active = true;
         }
 
-        p_pitchbend->q12_tp_base= I2Q12( U16(p_ctrl->reg[2*ch+1].data, p_ctrl->reg[2*ch+0].data) );
-        p_pitchbend->q12_tp_end = I2Q12( U16(p_psg_cmd->data.note_on.tp_end_hi, p_psg_cmd->data.note_on.tp_end_lo) );
         init_pitchbend(p_time, p_pitchbend);
 
         p_ctrl->reg[PSG_REG_ADDR_MIXER].data &= ~(uint8_t)(0x9uL<<ch); 
         p_ctrl->reg[PSG_REG_ADDR_MIXER].data |= p_psg_cmd->data.note_on.data;
         p_ctrl->reg[PSG_REG_ADDR_MIXER].flag |= (1<<ch);
-
-
         break;
 
     case MSG_TYPE_NOTE_ON_REST:
@@ -294,20 +296,24 @@ static inline void proc_command(PSG_MML_CTRL_t *p_ctrl, uint8_t ch, const PSG_MM
         }
         break;
 
-    case MSG_TYPE_LFO:
+    case MSG_TYPE_LFO_1:
 
-        p_lfo->mode = p_psg_cmd->data.lfo.mode;
-        p_lfo->depth = p_psg_cmd->data.lfo.depth;
-        p_lfo->delay_tk = U16(p_psg_cmd->data.lfo.delay_tk_hi, p_psg_cmd->data.lfo.delay_tk_lo);
-        p_lfo->q12_omega = U32(p_psg_cmd->data.lfo.q12_omega_hh
-                             , p_psg_cmd->data.lfo.q12_omega_hl
-                             , p_psg_cmd->data.lfo.q12_omega_lh
-                             , p_psg_cmd->data.lfo.q12_omega_ll);
+        p_lfo->mode = p_psg_cmd->data.lfo_1.mode;
+        p_lfo->depth = p_psg_cmd->data.lfo_1.depth;
+        p_lfo->delay_tk = U16(p_psg_cmd->data.lfo_1.delay_tk_hi, p_psg_cmd->data.lfo_1.delay_tk_lo);
 
         p_lfo->q12_delta = 0;
         p_lfo->theta = 0;
 
         p_time->lfo_delay_cnt = p_lfo->delay_tk;
+        break;
+
+    case MSG_TYPE_LFO_2:
+
+        p_lfo->q12_omega = U32(p_psg_cmd->data.lfo_2.q12_omega_hh
+                             , p_psg_cmd->data.lfo_2.q12_omega_hl
+                             , p_psg_cmd->data.lfo_2.q12_omega_lh
+                             , p_psg_cmd->data.lfo_2.q12_omega_ll);
         break;
 
     case MSG_TYPE_SOFT_ENV_1:
@@ -322,13 +328,17 @@ static inline void proc_command(PSG_MML_CTRL_t *p_ctrl, uint8_t ch, const PSG_MM
 
         p_soft_env->attack_tk  = U16(p_psg_cmd->data.soft_env_2.attack_tk_hi , p_psg_cmd->data.soft_env_2.attack_tk_lo);
         p_soft_env->hold_tk    = U16(p_psg_cmd->data.soft_env_2.hold_tk_hi   , p_psg_cmd->data.soft_env_2.hold_tk_lo);
-        p_soft_env->decay_tk   = U16(p_psg_cmd->data.soft_env_2.decay_tk_hi  , p_psg_cmd->data.soft_env_2.decay_tk_lo);
         break;
 
     case MSG_TYPE_SOFT_ENV_3:
 
+        p_soft_env->decay_tk   = U16(p_psg_cmd->data.soft_env_3.decay_tk_hi  , p_psg_cmd->data.soft_env_3.decay_tk_lo);
         p_soft_env->fade_tk    = U16(p_psg_cmd->data.soft_env_3.fade_tk_hi    , p_psg_cmd->data.soft_env_3.fade_tk_lo);
-        p_soft_env->release_tk = U16(p_psg_cmd->data.soft_env_3.release_tk_hi , p_psg_cmd->data.soft_env_3.release_tk_lo);
+        break;
+
+    case MSG_TYPE_SOFT_ENV_4:
+
+        p_soft_env->release_tk = U16(p_psg_cmd->data.soft_env_4.release_tk_hi , p_psg_cmd->data.soft_env_4.release_tk_lo);
         break;
 
     default:

@@ -1114,14 +1114,14 @@ static void mml_decode_operate_mixer(PSG_MML_DECODER_t *p_decoder, uint8_t ch, P
             tp_end = shift_tp(tp, p_decoder->tone_params.channel[ch].q24_pitchbend);
         }
 
-        p_out->msg[index].type = MSG_TYPE_SETTINGS;
-        p_out->msg[index].data.settings.addr = 2*ch;
-        p_out->msg[index].data.settings.data = U16_LO(tp);
+        p_out->msg[index].type = MSG_TYPE_SETTINGS_1;
+        p_out->msg[index].data.settings_1.addr = 2*ch;
+        p_out->msg[index].data.settings_1.data = U16_LO(tp);
         index++;
 
-        p_out->msg[index].type = MSG_TYPE_SETTINGS;
-        p_out->msg[index].data.settings.addr = 2*ch + 1;
-        p_out->msg[index].data.settings.data = U16_HI(tp);
+        p_out->msg[index].type = MSG_TYPE_SETTINGS_1;
+        p_out->msg[index].data.settings_1.addr = 2*ch + 1;
+        p_out->msg[index].data.settings_1.data = U16_HI(tp);
         index++;
     }
     else
@@ -1133,39 +1133,39 @@ static void mml_decode_operate_mixer(PSG_MML_DECODER_t *p_decoder, uint8_t ch, P
     /* Set NP */
     if ( note_type == E_NOTE_TYPE_NOISE )
     {
-        p_out->msg[index].type = MSG_TYPE_SETTINGS;
-        p_out->msg[index].data.settings.addr = 0x06;
-        p_out->msg[index].data.settings.data = p_decoder->tone_params.np;
+        p_out->msg[index].type = MSG_TYPE_SETTINGS_1;
+        p_out->msg[index].data.settings_1.addr = 0x06;
+        p_out->msg[index].data.settings_1.data = p_decoder->tone_params.np;
         index++;
     }
 
     if ( ( note_type == E_NOTE_TYPE_TONE ) 
       || ( note_type == E_NOTE_TYPE_NOISE ) )
     {
-        p_out->msg[index].type = MSG_TYPE_SETTINGS;
-        p_out->msg[index].data.settings.addr = ch + 0x08;
-        p_out->msg[index].data.settings.data = p_decoder->tone_params.channel[ch].vol_ctrl;
+        p_out->msg[index].type = MSG_TYPE_SETTINGS_1;
+        p_out->msg[index].data.settings_1.addr = ch + 0x08;
+        p_out->msg[index].data.settings_1.data = p_decoder->tone_params.channel[ch].vol_ctrl;
         index++;
 
         if ( (p_decoder->tone_params.channel[ch].vol_ctrl & (1<<4)) != 0 )
         {
             /* To reload 5bit counter of the envelope generator. */
-            p_out->msg[index].type = MSG_TYPE_SETTINGS;
-            p_out->msg[index].data.settings.addr = 0x0B;
-            p_out->msg[index].data.settings.data = U16_LO(p_decoder->tone_params.ep);
+            p_out->msg[index].type = MSG_TYPE_SETTINGS_1;
+            p_out->msg[index].data.settings_1.addr = 0x0B;
+            p_out->msg[index].data.settings_1.data = U16_LO(p_decoder->tone_params.ep);
             index++;
 
-            p_out->msg[index].type = MSG_TYPE_SETTINGS;
-            p_out->msg[index].data.settings.addr = 0x0C;
-            p_out->msg[index].data.settings.data = U16_HI(p_decoder->tone_params.ep);
+            p_out->msg[index].type = MSG_TYPE_SETTINGS_1;
+            p_out->msg[index].data.settings_1.addr = 0x0C;
+            p_out->msg[index].data.settings_1.data = U16_HI(p_decoder->tone_params.ep);
             index++;
 
             if ( !p_decoder->tone_params.channel[ch].legato_effect )
             {
                 /* Set envelope shape */
-                p_out->msg[index].type = MSG_TYPE_SETTINGS;
-                p_out->msg[index].data.settings.addr = 0x0D;
-                p_out->msg[index].data.settings.data = p_decoder->tone_params.env_shape;
+                p_out->msg[index].type = MSG_TYPE_SETTINGS_1;
+                p_out->msg[index].data.settings_1.addr = 0x0D;
+                p_out->msg[index].data.settings_1.data = p_decoder->tone_params.env_shape;
                 index++;
             }
 
@@ -1189,15 +1189,18 @@ static void mml_decode_operate_mixer(PSG_MML_DECODER_t *p_decoder, uint8_t ch, P
             p_out->msg[index].data.soft_env_2.attack_tk_lo = U16_LO(p_decoder->tone_params.channel[ch].soft_env_attack_tk);
             p_out->msg[index].data.soft_env_2.hold_tk_hi   = U16_HI(p_decoder->tone_params.channel[ch].soft_env_hold_tk);
             p_out->msg[index].data.soft_env_2.hold_tk_lo   = U16_LO(p_decoder->tone_params.channel[ch].soft_env_hold_tk);
-            p_out->msg[index].data.soft_env_2.decay_tk_hi  = U16_HI(p_decoder->tone_params.channel[ch].soft_env_decay_tk);
-            p_out->msg[index].data.soft_env_2.decay_tk_lo  = U16_LO(p_decoder->tone_params.channel[ch].soft_env_decay_tk);
             index++;
 
             p_out->msg[index].type = MSG_TYPE_SOFT_ENV_3;
-            p_out->msg[index].data.soft_env_3.fade_tk_hi    = U16_HI(p_decoder->tone_params.channel[ch].soft_env_fade_tk);
-            p_out->msg[index].data.soft_env_3.fade_tk_lo    = U16_LO(p_decoder->tone_params.channel[ch].soft_env_fade_tk);
-            p_out->msg[index].data.soft_env_3.release_tk_hi = U16_HI(p_decoder->tone_params.channel[ch].soft_env_release_tk);
-            p_out->msg[index].data.soft_env_3.release_tk_lo = U16_LO(p_decoder->tone_params.channel[ch].soft_env_release_tk);
+            p_out->msg[index].data.soft_env_3.decay_tk_hi  = U16_HI(p_decoder->tone_params.channel[ch].soft_env_decay_tk);
+            p_out->msg[index].data.soft_env_3.decay_tk_lo  = U16_LO(p_decoder->tone_params.channel[ch].soft_env_decay_tk);
+            p_out->msg[index].data.soft_env_3.fade_tk_hi   = U16_HI(p_decoder->tone_params.channel[ch].soft_env_fade_tk);
+            p_out->msg[index].data.soft_env_3.fade_tk_lo   = U16_LO(p_decoder->tone_params.channel[ch].soft_env_fade_tk);
+            index++;
+
+            p_out->msg[index].type = MSG_TYPE_SOFT_ENV_4;
+            p_out->msg[index].data.soft_env_4.release_tk_hi = U16_HI(p_decoder->tone_params.channel[ch].soft_env_release_tk);
+            p_out->msg[index].data.soft_env_4.release_tk_lo = U16_LO(p_decoder->tone_params.channel[ch].soft_env_release_tk);
             index++;
         }
     }
@@ -1206,18 +1209,21 @@ static void mml_decode_operate_mixer(PSG_MML_DECODER_t *p_decoder, uint8_t ch, P
     {
         if ( !p_decoder->tone_params.channel[ch].legato_effect )
         {
-            p_out->msg[index].type = MSG_TYPE_LFO;
-            p_out->msg[index].data.lfo.mode  = p_decoder->tone_params.channel[ch].lfo_mode;
-            p_out->msg[index].data.lfo.depth = p_decoder->tone_params.channel[ch].lfo_depth;
-            p_out->msg[index].data.lfo.delay_tk_hi = U16_HI(p_decoder->tone_params.channel[ch].lfo_delay_tk);
-            p_out->msg[index].data.lfo.delay_tk_lo = U16_LO(p_decoder->tone_params.channel[ch].lfo_delay_tk);
+            p_out->msg[index].type = MSG_TYPE_LFO_1;
+            p_out->msg[index].data.lfo_1.mode  = p_decoder->tone_params.channel[ch].lfo_mode;
+            p_out->msg[index].data.lfo_1.depth = p_decoder->tone_params.channel[ch].lfo_depth;
+            p_out->msg[index].data.lfo_1.delay_tk_hi = U16_HI(p_decoder->tone_params.channel[ch].lfo_delay_tk);
+            p_out->msg[index].data.lfo_1.delay_tk_lo = U16_LO(p_decoder->tone_params.channel[ch].lfo_delay_tk);
+            index++;
+
+            p_out->msg[index].type = MSG_TYPE_LFO_2;
             q12_omega = I2Q12(1);
             q12_omega *= (uint32_t)p_decoder->tone_params.channel[ch].lfo_depth*4*p_decoder->tone_params.channel[ch].lfo_speed;
             q12_omega /= ((uint32_t)p_decoder->tick_hz*MAX_LFO_PERIOD);
-            p_out->msg[index].data.lfo.q12_omega_hh = U32_HH(q12_omega);
-            p_out->msg[index].data.lfo.q12_omega_hl = U32_HL(q12_omega);
-            p_out->msg[index].data.lfo.q12_omega_lh = U32_LH(q12_omega);
-            p_out->msg[index].data.lfo.q12_omega_ll = U32_LL(q12_omega);
+            p_out->msg[index].data.lfo_2.q12_omega_hh = U32_HH(q12_omega);
+            p_out->msg[index].data.lfo_2.q12_omega_hl = U32_HL(q12_omega);
+            p_out->msg[index].data.lfo_2.q12_omega_lh = U32_LH(q12_omega);
+            p_out->msg[index].data.lfo_2.q12_omega_ll = U32_LL(q12_omega);
             index++;
         }
     }
@@ -1238,6 +1244,13 @@ static void mml_decode_operate_mixer(PSG_MML_DECODER_t *p_decoder, uint8_t ch, P
         q12_gate_time = (q12_note_on_time * (q12_t)p_decoder->tone_params.channel[ch].gate_time)/MAX_GATE_TIME;
         gate_time_tk = Q_INT(q12_gate_time, 12);
 
+        p_out->msg[index].type = MSG_TYPE_SETTINGS_2;
+        p_out->msg[index].data.settings_2.gate_time_tk_hi = U16_HI(gate_time_tk);
+        p_out->msg[index].data.settings_2.gate_time_tk_lo = U16_LO(gate_time_tk);
+        p_out->msg[index].data.settings_2.tp_end_hi = U16_HI(tp_end);
+        p_out->msg[index].data.settings_2.tp_end_lo = U16_LO(tp_end);
+        index++;
+
         req_mixer = 0x00;
         req_mixer = ( note_type == E_NOTE_TYPE_TONE  ) ? (0x08)
                   : ( note_type == E_NOTE_TYPE_NOISE ) ? (0x01)
@@ -1251,10 +1264,6 @@ static void mml_decode_operate_mixer(PSG_MML_DECODER_t *p_decoder, uint8_t ch, P
         p_out->msg[index].data.note_on.data = req_mixer<<ch;
         p_out->msg[index].data.note_on.note_on_time_tk_hi = U16_HI(note_on_time_tk);
         p_out->msg[index].data.note_on.note_on_time_tk_lo = U16_LO(note_on_time_tk);
-        p_out->msg[index].data.note_on.gate_time_tk_hi = U16_HI(gate_time_tk);
-        p_out->msg[index].data.note_on.gate_time_tk_lo = U16_LO(gate_time_tk);
-        p_out->msg[index].data.note_on.tp_end_hi = U16_HI(tp_end);
-        p_out->msg[index].data.note_on.tp_end_lo = U16_LO(tp_end);
         index++;
     }
 
