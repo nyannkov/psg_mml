@@ -29,6 +29,7 @@ extern "C" {
 #endif/*__cplusplus*/
 
 
+/*#define PSG_MML_SLOT_TOTAL_NUM                (2)      */
 /*#define PSG_MML_FIFO_SCALE                    (8)      */
 /*#define PSG_MML_SHARE_SLOT0_DRIVER            true     */
 

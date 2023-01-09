@@ -28,9 +28,11 @@
 #include "../inc/local/psg_mml_ctrl.h"
 #include "../inc/psg_mml.h"
 
-#ifndef PSG_MML_SHARE_SLOT_0_DRIVER
-#define PSG_MML_SHARE_SLOT_0_DRIVER    (true) 
+#ifndef PSG_MML_SHARE_SLOT0_DRIVER
+#define PSG_MML_SHARE_SLOT0_DRIVER     (true) 
 #endif
+
+#define PSG_MML_SHARE_PSG_MODE         ( (PSG_MML_SHARE_SLOT0_DRIVER==true) && (PSG_MML_SLOT_TOTAL_NUM==2) )
 
 #ifndef PSG_MML_HOOK_START_PERIODIC_CONTROL
 #define PSG_MML_HOOK_START_PERIODIC_CONTROL()
@@ -66,22 +68,12 @@ typedef struct
 static void obj_init(PSG_MML_t *p_obj, void (*p_write)(uint8_t addr, uint8_t data), uint16_t tick_hz);
 static void psg_write(PSG_MML_t *p_obj, uint8_t addr, uint8_t data);
 static psg_mml_t predecode(uint8_t slot, uint16_t num_of_predecode_times);
-#if PSG_MML_SHARE_SLOT_0_DRIVER
+#if PSG_MML_SHARE_PSG_MODE
 static uint8_t psg_read(PSG_MML_t *p_obj, uint8_t addr);
 #endif
 static size_t psg_mml_strnlen(const char *s, size_t max_len);
 
-static PSG_MML_t psg_mml_obj[PSG_MML_SLOT_TOTAL_NUM] = 
-{
-    /* slot0 */
-    {
-        .initialized = false,
-    },
-    /* slot1 */
-    {
-        .initialized = false,
-    }
-};
+static PSG_MML_t psg_mml_obj[PSG_MML_SLOT_TOTAL_NUM];
 
 psg_mml_t psg_mml_init(uint8_t slot, uint16_t tick_hz, void (*p_write)(uint8_t addr, uint8_t data))
 {
@@ -423,7 +415,7 @@ static size_t psg_mml_strnlen(const char *s, size_t max_len)
     return len;
 }
 
-#if PSG_MML_SHARE_SLOT_0_DRIVER
+#if PSG_MML_SHARE_PSG_MODE
 static inline bool is_noise_in_use_by_slot1(void)
 {
     PSG_MML_t *p_slot1_obj = &psg_mml_obj[1];
@@ -513,7 +505,7 @@ void psg_mml_periodic_control(void)
 {
     uint32_t slot;
     uint8_t addr, data;
-#if PSG_MML_SHARE_SLOT_0_DRIVER
+#if PSG_MML_SHARE_PSG_MODE
     uint8_t ch;
     uint8_t addr_swp;
     uint8_t flag_swp;
@@ -528,7 +520,7 @@ void psg_mml_periodic_control(void)
     
     PSG_MML_HOOK_START_PERIODIC_CONTROL();
 
-#if PSG_MML_SHARE_SLOT_0_DRIVER
+#if PSG_MML_SHARE_PSG_MODE
 
     if ( !psg_mml_obj[0].initialized && !psg_mml_obj[1].initialized ) 
     {
@@ -651,16 +643,21 @@ void psg_mml_periodic_control(void)
         }
     }
 #else
-    for ( addr = MIN_PSG_REG_ADDR; addr <= MAX_PSG_REG_ADDR; addr++ )
-    {
-        for ( slot = 0; slot < PSG_MML_SLOT_TOTAL_NUM; slot++ )
-        {
-            if ( PSG_MML_CTRL_GET_REG_FLAG(&psg_mml_obj[slot].ctrl, addr) != 0 )
-            {
-                PSG_MML_CTRL_CLEAR_REG_FLAG(&psg_mml_obj[slot].ctrl, addr);
-                data = PSG_MML_CTRL_GET_REG_DATA(&psg_mml_obj[slot].ctrl, addr);
 
-                psg_write(&psg_mml_obj[slot], addr, data);
+    for ( slot = 0; slot < PSG_MML_SLOT_TOTAL_NUM; slot++ )
+    {
+        if ( psg_mml_obj[slot].initialized )
+        {
+            psg_mml_ctrl_proc(&psg_mml_obj[slot].ctrl, psg_mml_obj[slot].fifo);
+            for ( addr = MIN_PSG_REG_ADDR; addr <= MAX_PSG_REG_ADDR; addr++ )
+            {
+                if ( PSG_MML_CTRL_GET_REG_FLAG(&psg_mml_obj[slot].ctrl, addr) != 0 )
+                {
+                    PSG_MML_CTRL_CLEAR_REG_FLAG(&psg_mml_obj[slot].ctrl, addr);
+                    data = PSG_MML_CTRL_GET_REG_DATA(&psg_mml_obj[slot].ctrl, addr);
+
+                    psg_write(&psg_mml_obj[slot], addr, data);
+                }
             }
         }
     }

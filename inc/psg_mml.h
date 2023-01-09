@@ -32,7 +32,14 @@ extern "C" {
 
 #define PSG_MML_VERSION                         "0.0.1"
 
+#ifndef PSG_MML_SLOT_TOTAL_NUM
 #define PSG_MML_SLOT_TOTAL_NUM                  (2)
+#endif/*PSG_MML_SLOT_TOTAL_NUM*/
+
+#if !( (PSG_MML_SLOT_TOTAL_NUM==1) || (PSG_MML_SLOT_TOTAL_NUM==2) )
+#error PSG_MML_SLOT_TOTAL_NUM must be 1 or 2.
+#endif
+
 
 typedef enum
 {
