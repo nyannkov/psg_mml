@@ -17,7 +17,7 @@ psg_mmlはPSG音源用のサウンドミドルウェアです。
 電源投入後に，ゆりかごのうたを演奏するサンプルプログラムです。
 
  - Raspberrypi pico + YMZ294を使用した場合: [rpi_pico_ymz294](examples/music_box/boards/rpi_pico)
-   [演奏動画](https://www.youtube.com/watch?v=CFmfhx5PqrA)
+   ( [演奏動画](https://www.youtube.com/watch?v=CFmfhx5PqrA) )
 
 # Details
 
@@ -268,12 +268,20 @@ psg_mml_t  psg_mml_get_play_state(
 環境に合わせてこのテンプレートの内容を編集し，ファイル名をpsg_mml_conf.hにリネームして使用ください。
 ここでは各設定値およびマクロについて記載します。
 
+### PSG_MML_SLOT_TOTAL_NUM
+
+実装するスロットの総数を設定します。 値は1または2から選択することができます。 この定数のデフォルトは2です。
+
 ### PSG_MML_FIFO_SCALE
 
 MMLのデコード情報を格納するFIFOの長さを変更できます。この定数のデフォルトは8です。
 各楽音チャンネルのFIFOには，少なくともこの値で指定した個数分の音符および休符を格納することができます。
 
 ### PSG_MML_SHARE_SLOT0_DRIVER
+
+**NOTE:**
+この設定値はPSG_MML_SLOT_TOTAL_NUMが2の場合にのみ有効です。
+
 
 スロット0, 1の動作をtrue/falseで設定します。この定数のデフォルトはtrueです。各値におけるスロット0, 1の動作は以下のとおりです。
 
@@ -290,7 +298,6 @@ MMLのデコード情報を格納するFIFOの長さを変更できます。こ�
 **falseの場合**
  
 スロット0, 1を連携させず個別に演奏を行います。スロット0および1に個別にPSGを割り当てるような場合は，このモードを選択します。
-
 
 
 ### PSG_MML_DISABLE_PERIODIC_CONTROL()
