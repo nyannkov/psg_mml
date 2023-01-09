@@ -29,28 +29,39 @@ extern "C" {
 #endif/*__cplusplus*/
 
 #define MSG_TYPE_DECODE_STATUS             (0x10)
-#define MSG_TYPE_SETTINGS                  (0x20)
+#define MSG_TYPE_SETTINGS_1                (0x20)
+#define MSG_TYPE_SETTINGS_2                (0x21)
 #define MSG_TYPE_NOTE_ON                   (0x30)
 #define MSG_TYPE_NOTE_ON_REST              (0x31)
 #define MSG_TYPE_NOTE_OFF                  (0x40)
-#define MSG_TYPE_LFO                       (0x50)
+#define MSG_TYPE_LFO_1                     (0x50)
+#define MSG_TYPE_LFO_2                     (0x51)
 #define MSG_TYPE_SOFT_ENV_1                (0x60)
 #define MSG_TYPE_SOFT_ENV_2                (0x71)
 #define MSG_TYPE_SOFT_ENV_3                (0x72)
+#define MSG_TYPE_SOFT_ENV_4                (0x73)
 
 #pragma pack(1)
 typedef struct
 {
     uint8_t status;
-    uint8_t reserve[7];
+    uint8_t reserve[3];
 } MSG_TYPE_DECODE_STATUS_t;
 
 typedef struct
 {
     uint8_t addr;
     uint8_t data;
-    uint8_t reserve[6];
-} MSG_TYPE_SETTINGS_t;
+    uint8_t reserve[2];
+} MSG_TYPE_SETTINGS_1_t;
+
+typedef struct
+{
+    uint8_t tp_end_hi;
+    uint8_t tp_end_lo;
+    uint8_t gate_time_tk_hi;
+    uint8_t gate_time_tk_lo;
+} MSG_TYPE_SETTINGS_2_t;
 
 typedef struct
 {
@@ -58,17 +69,13 @@ typedef struct
     uint8_t data;
     uint8_t note_on_time_tk_hi;
     uint8_t note_on_time_tk_lo;
-    uint8_t gate_time_tk_hi;
-    uint8_t gate_time_tk_lo;
-    uint8_t tp_end_hi;
-    uint8_t tp_end_lo;
 } MSG_TYPE_NOTE_ON_t;
 
 typedef struct
 {
     uint8_t addr;
     uint8_t data;
-    uint8_t reserve[6];
+    uint8_t reserve[2];
 } MSG_TYPE_NOTE_OFF_t;
 
 typedef struct
@@ -77,11 +84,15 @@ typedef struct
     uint8_t depth;
     uint8_t delay_tk_hi;
     uint8_t delay_tk_lo;
+} MSG_TYPE_LFO_1_t;
+
+typedef struct
+{
     uint8_t q12_omega_hh;
     uint8_t q12_omega_hl;
     uint8_t q12_omega_lh;
     uint8_t q12_omega_ll;
-} MSG_TYPE_LFO_t;
+} MSG_TYPE_LFO_2_t;
 
 typedef struct
 {
@@ -89,7 +100,6 @@ typedef struct
     uint8_t top_volume;
     uint8_t sus_volume;
     uint8_t legato_effect;
-    uint8_t reserve[4];
 } MSG_TYPE_SOFT_ENV_1_t;
 
 typedef struct
@@ -98,35 +108,40 @@ typedef struct
     uint8_t attack_tk_lo;
     uint8_t hold_tk_hi;
     uint8_t hold_tk_lo;
-    uint8_t decay_tk_hi;
-    uint8_t decay_tk_lo;
-    uint8_t reserve[2];
 } MSG_TYPE_SOFT_ENV_2_t;
 
 typedef struct
 {
+    uint8_t decay_tk_hi;
+    uint8_t decay_tk_lo;
     uint8_t fade_tk_hi;
     uint8_t fade_tk_lo;
-    uint8_t release_tk_hi;
-    uint8_t release_tk_lo;
-    uint8_t reserve[4];
 } MSG_TYPE_SOFT_ENV_3_t;
 
 typedef struct
 {
-    uint16_t    time;
-    uint16_t    type;
+    uint8_t release_tk_hi;
+    uint8_t release_tk_lo;
+    uint8_t reserve[2];
+} MSG_TYPE_SOFT_ENV_4_t;
+
+typedef struct
+{
+    uint8_t     type;
     union
     {
-        uint8_t byte[8];
+        uint8_t byte[4];
         MSG_TYPE_DECODE_STATUS_t    decode_status;
-        MSG_TYPE_SETTINGS_t         settings;
+        MSG_TYPE_SETTINGS_1_t       settings_1;
+        MSG_TYPE_SETTINGS_2_t       settings_2;
         MSG_TYPE_NOTE_ON_t          note_on;
         MSG_TYPE_NOTE_OFF_t         note_off;
-        MSG_TYPE_LFO_t              lfo;
+        MSG_TYPE_LFO_1_t            lfo_1;
+        MSG_TYPE_LFO_2_t            lfo_2;
         MSG_TYPE_SOFT_ENV_1_t       soft_env_1;
         MSG_TYPE_SOFT_ENV_2_t       soft_env_2;
         MSG_TYPE_SOFT_ENV_3_t       soft_env_3;
+        MSG_TYPE_SOFT_ENV_4_t       soft_env_4;
     } data;
 } PSG_MML_CMD_t;
 
@@ -134,11 +149,12 @@ typedef struct
 #define PSG_MML_FIFO_SCALE          (8)
 #endif
 
-#define MAX_PSG_MML_FIFO_LENGTH     (MAX_PSG_MML_MSG_NUM*PSG_MML_FIFO_SCALE)
-
-#if MAX_PSG_MML_FIFO_LENGTH < (MAX_PSG_MML_MSG_NUM*2)
-#error MAX_PSG_MML_FIFO_LENGTH must be greater equal to (MAX_PSG_MML_MSG_NUM*2).
+#if PSG_MML_FIFO_SCALE < 2 
+#error PSG_MML_FIFO_SCALE must be greater equal to 2.
 #endif
+
+#define MAX_PSG_MML_FIFO_LENGTH     (MAX_PSG_MML_MSG_NUM*PSG_MML_FIFO_SCALE+1)
+
 #if MAX_PSG_MML_FIFO_LENGTH > 30000 
 #error MAX_PSG_MML_FIFO_LENGTH must be less equal to 30,000.
 #endif

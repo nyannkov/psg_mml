@@ -17,7 +17,7 @@ psg_mml is a sound middleware for PSG sound source.
 This is a sample program that plays "Yurikago no uta" after turning on the power.
 
   - When using Raspberrypi pico + YMZ294: [rpi_pico_ymz294](examples/music_box/boards/rpi_pico)
-   [Movie](https://www.youtube.com/watch?v=CFmfhx5PqrA)
+   ( [Movie](https://www.youtube.com/watch?v=CFmfhx5PqrA) )
 
 # Details
 ## API reference
@@ -264,12 +264,20 @@ psg_mml_conf_template.h is provided as a template for this header.
 Please edit the contents of this template according to your environment and rename the file name to psg_mml_conf.h.
 Each setting value and macro are described here.
 
+
+### PSG_MML_SLOT_TOTAL_NUM
+Sets the total number of slots to be implemented. The value can be selected from 1 or 2. The default for this constant is 2.
+
 ### PSG_MML_FIFO_SCALE
 
 You can change the length of the FIFO that stores the MML decoding information. The default for this constant is 8.
 The FIFO of each music channel can contain at least the number of notes and rests specified by this value.
 
 ### PSG_MML_SHARE_SLOT0_DRIVER
+
+**NOTE:**
+This setting value is valid only when PSG_MML_SLOT_TOTAL_NUM is 2.
+
 
 Sets the behavior of slots 0 and 1 as true/false. The default for this constant is true. The behavior of slots 0 and 1 for each value is as follows
 
@@ -278,7 +286,7 @@ Sets the behavior of slots 0 and 1 as true/false. The default for this constant 
 Slots 0 and 1 are played in conjunction. If a single PSG is shared by slots 0 and 1, the build is performed with this setting value.
 With this setting, the three PSG music channels (channels A, B and C) are preferentially assigned to slot 1 for playing.
 For example, if you are playing background music with 3 chords in slot 0 and want to generate a single note sound effect in slot 1, you would assign music channel C to slot 1 and play the rest of the music channels A, B, and C in slot 0.
-The remaining music channels A and B are assigned to slot 0 (temporarily, slot 0 is assigned to 2 chords, and slot 1 is assigned to 2 chords). （) The remaining music channels A and B are assigned to slot 0 and played.
+The remaining music channels A and B are assigned to slot 0 (temporarily, slot 0 is assigned to 2 chords, and slot 1 is assigned to 2 chords).
 The MML for each comma-separated part is assigned to music channels A, B, and C in order from left to right in slot 0.
 Conversely, in slot 1, the MML for each part separated by commas is assigned to music channels C, B, and A.
 Therefore, when playing background music in slot 0, it is recommended to write the parts that can be temporarily silenced on the right side of the comma delimiter.
