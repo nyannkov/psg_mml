@@ -183,7 +183,7 @@ psg_mml_t psg_mml_decode(uint8_t slot)
 
 static psg_mml_t predecode(uint8_t slot, uint16_t num_predecode)
 {
-    psg_mml_t r;
+    psg_mml_t r = PSG_MML_SUCCESS;
     uint16_t i;
     for ( i = 0; i < num_predecode; i++ )
     {
@@ -235,7 +235,7 @@ psg_mml_t psg_mml_play_start(uint8_t slot, uint16_t num_predecode)
 {
     PSG_MML_t *p_obj;
     PSG_MML_CTRL_STATE_t state;
-    psg_mml_t r;
+    psg_mml_t r = PSG_MML_SUCCESS;
 
     if ( slot >= PSG_MML_SLOT_TOTAL_NUM )
     {
@@ -259,6 +259,10 @@ psg_mml_t psg_mml_play_start(uint8_t slot, uint16_t num_predecode)
         {
             psg_mml_ctrl_set_state(&p_obj->ctrl, E_PSG_MML_CTRL_STATE_PLAY);
             r = PSG_MML_SUCCESS;
+        }
+        else
+        {
+            r = PSG_MML_INTERNAL_ERROR;
         }
     }
 
