@@ -41,7 +41,6 @@ typedef enum
     E_MML_TEXT_LOAD_STATE_READY
 } MML_TEXT_LOAD_STATE_t;
 
-#pragma pack(1)
 typedef struct
 {
     const char *p_mml_text;
@@ -104,8 +103,6 @@ typedef struct
     uint8_t msg_cnt;
     PSG_MML_CMD_t msg[MAX_PSG_MML_MSG_NUM];
 } PSG_MML_MSG_t;
-#pragma pack()
-
 
 
 void              psg_mml_decode_init(PSG_MML_DECODER_t *p_decoder, uint16_t tick_hz);

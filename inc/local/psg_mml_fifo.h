@@ -41,7 +41,6 @@ extern "C" {
 #define MSG_TYPE_SOFT_ENV_3                (0x72)
 #define MSG_TYPE_SOFT_ENV_4                (0x73)
 
-#pragma pack(1)
 typedef struct
 {
     uint8_t status;
@@ -164,7 +163,6 @@ typedef struct
     int16_t front;
     int16_t back;
 } PSG_MML_FIFO_t;
-#pragma pack()
 
 void psg_mml_fifo_init(PSG_MML_FIFO_t *p_fifo);
 uint16_t psg_mml_fifo_get_free_space(const PSG_MML_FIFO_t *p_fifo);
