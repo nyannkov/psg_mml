@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 include("$ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake")
 
-project(pico_games C CXX ASM)
+project(${PSG_MML_PROJECT_NAME} C CXX ASM)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 

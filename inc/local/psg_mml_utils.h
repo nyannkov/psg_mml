@@ -41,6 +41,18 @@ extern "C" {
 #define U32_LL(x)               (((x)>> 0)&0xFF)
 
 
+#ifndef PSG_MML_MEMCPY
+void *psg_mml_memcpy(void *p_dest, const void *p_src, size_t n);
+#define PSG_MML_MEMCPY      psg_mml_memcpy
+#endif/*PSG_MML_MEMCPY*/
+
+
+#ifndef PSG_MML_MEMSET
+void *psg_mml_memset(void *p_dest, int c, size_t n);
+#define PSG_MML_MEMSET      psg_mml_memset
+#endif/*PSG_MML_MEMSET*/
+
+
 #ifdef __cplusplus
 }
 #endif/*__cplusplus*/

@@ -23,9 +23,9 @@
  */
 #include "../../inc/local/psg_mml_local.h"
 #include "../../inc/local/psg_mml_fifo.h"
+#include "../../inc/local/psg_mml_utils.h"
 
 static bool is_fifo_empty(const PSG_MML_FIFO_t *p_fifo);
-static void *psg_mml_memcpy(void *p_dest, const void *p_src, size_t n);
 
 void psg_mml_fifo_init(PSG_MML_FIFO_t *p_fifo)
 {
@@ -55,7 +55,7 @@ bool psg_mml_fifo_enqueue(PSG_MML_FIFO_t *p_fifo, const PSG_MML_CMD_t p_cmd_list
     next_front = p_fifo->front;
     for ( i = 0; i < list_count; i++ )
     {
-        psg_mml_memcpy(&p_fifo->ring[next_front], &p_cmd_list[i], sizeof(PSG_MML_CMD_t));
+        PSG_MML_MEMCPY(&p_fifo->ring[next_front], &p_cmd_list[i], sizeof(PSG_MML_CMD_t));
         next_front++;
         if ( next_front >= MAX_PSG_MML_FIFO_LENGTH )
         {
@@ -77,7 +77,7 @@ bool psg_mml_fifo_dequeue(PSG_MML_FIFO_t *p_fifo, PSG_MML_CMD_t *p_cmd)
     }
 
     next_back = p_fifo->back;
-    psg_mml_memcpy(p_cmd, &p_fifo->ring[next_back], sizeof(PSG_MML_CMD_t));
+    PSG_MML_MEMCPY(p_cmd, &p_fifo->ring[next_back], sizeof(PSG_MML_CMD_t));
 
     next_back++;
     if ( next_back >= MAX_PSG_MML_FIFO_LENGTH )
@@ -94,14 +94,3 @@ static bool is_fifo_empty(const PSG_MML_FIFO_t *p_fifo)
 {
     return (p_fifo->front == p_fifo->back);
 }
-
-static void *psg_mml_memcpy(void *p_dest, const void *p_src, size_t n)
-{
-    size_t i;
-    for ( i = 0; i < n; i++ )
-    {
-        ((uint8_t *)p_dest)[i] = ((uint8_t *)p_src)[i];
-    }
-    return p_dest;
-}
-

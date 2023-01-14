@@ -31,6 +31,7 @@ extern "C" {
 #define MSG_TYPE_DECODE_STATUS             (0x10)
 #define MSG_TYPE_SETTINGS_1                (0x20)
 #define MSG_TYPE_SETTINGS_2                (0x21)
+#define MSG_TYPE_SETTINGS_3                (0x22)
 #define MSG_TYPE_NOTE_ON                   (0x30)
 #define MSG_TYPE_NOTE_ON_REST              (0x31)
 #define MSG_TYPE_NOTE_OFF                  (0x40)
@@ -41,7 +42,6 @@ extern "C" {
 #define MSG_TYPE_SOFT_ENV_3                (0x72)
 #define MSG_TYPE_SOFT_ENV_4                (0x73)
 
-#pragma pack(1)
 typedef struct
 {
     uint8_t status;
@@ -57,11 +57,19 @@ typedef struct
 
 typedef struct
 {
+    uint8_t addr1;
+    uint8_t data1;
+    uint8_t addr2;
+    uint8_t data2;
+} MSG_TYPE_SETTINGS_2_t;
+
+typedef struct
+{
     uint8_t tp_end_hi;
     uint8_t tp_end_lo;
     uint8_t gate_time_tk_hi;
     uint8_t gate_time_tk_lo;
-} MSG_TYPE_SETTINGS_2_t;
+} MSG_TYPE_SETTINGS_3_t;
 
 typedef struct
 {
@@ -134,6 +142,7 @@ typedef struct
         MSG_TYPE_DECODE_STATUS_t    decode_status;
         MSG_TYPE_SETTINGS_1_t       settings_1;
         MSG_TYPE_SETTINGS_2_t       settings_2;
+        MSG_TYPE_SETTINGS_3_t       settings_3;
         MSG_TYPE_NOTE_ON_t          note_on;
         MSG_TYPE_NOTE_OFF_t         note_off;
         MSG_TYPE_LFO_1_t            lfo_1;
@@ -164,7 +173,6 @@ typedef struct
     int16_t front;
     int16_t back;
 } PSG_MML_FIFO_t;
-#pragma pack()
 
 void psg_mml_fifo_init(PSG_MML_FIFO_t *p_fifo);
 uint16_t psg_mml_fifo_get_free_space(const PSG_MML_FIFO_t *p_fifo);
