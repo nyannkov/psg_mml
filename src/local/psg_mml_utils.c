@@ -21,40 +21,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#ifndef PSG_MML_UTILS
-#define PSG_MML_UTILS
+#include "../../inc/local/psg_mml_local.h"
+#include "../../inc/local/psg_mml_utils.h"
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif/*__cplusplus*/
-
-
-#define U16(h,l)                (((uint16_t)(h)<<8)|(l))
-#define U16_HI(x)               (((x)>>8)&0xFF)
-#define U16_LO(x)               (((x)>>0)&0xFF)
-
-#define U32(hh,hl,lh,ll)        (((uint32_t)(hh)<<24)|((uint32_t)(hl)<<16)|((uint32_t)(lh)<<8)|(ll))
-#define U32_HH(x)               (((x)>>24)&0xFF)
-#define U32_HL(x)               (((x)>>16)&0xFF)
-#define U32_LH(x)               (((x)>> 8)&0xFF)
-#define U32_LL(x)               (((x)>> 0)&0xFF)
-
-
-#ifndef PSG_MML_MEMCPY
-void *psg_mml_memcpy(void *p_dest, const void *p_src, size_t n);
-#define PSG_MML_MEMCPY      psg_mml_memcpy
-#endif/*PSG_MML_MEMCPY*/
-
-
-#ifndef PSG_MML_MEMSET
-void *psg_mml_memset(void *p_dest, int c, size_t n);
-#define PSG_MML_MEMSET      psg_mml_memset
-#endif/*PSG_MML_MEMSET*/
-
-
-#ifdef __cplusplus
+void *psg_mml_memcpy(void *p_dest, const void *p_src, size_t n)
+{
+    size_t i;
+    for ( i = 0; i < n; i++ )
+    {
+        ((uint8_t *)p_dest)[i] = ((uint8_t *)p_src)[i];
+    }
+    return p_dest;
 }
-#endif/*__cplusplus*/
 
-#endif/*PSG_MML_UTILS*/
+void *psg_mml_memset(void *p_dest, int c, size_t n)
+{
+    size_t i;
+    for ( i = 0; i < n; i++ )
+    {
+        ((uint8_t *)p_dest)[i] = c;
+    }
+    return p_dest;
+}

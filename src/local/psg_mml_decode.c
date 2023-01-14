@@ -65,6 +65,9 @@ static q24_t    read_number_pitchbend(PSG_MML_DECODER_t *p_decoder, uint8_t ch, 
 
 static void skip_white_space(const char **pp_text);
 static uint16_t shift_tp(uint16_t tp, q24_t q24_factor);
+static void mml_params_init(PSG_MML_DECODER_t *p_decoder);
+
+
 
 static inline char to_upper_case(char c)
 {
@@ -540,58 +543,22 @@ static uint8_t get_tp_table_column_number(const char note_name)
     return col_num;
 }
 
-
-static void mml_text_info_init(PSG_MML_DECODER_t *p_decoder)
+static void mml_params_init(PSG_MML_DECODER_t *p_decoder)
 {
-    uint8_t i, j;
-    p_decoder->mml_text_info.p_mml_text = NULL;
-    p_decoder->mml_text_info.use_channel_num = 0;
+    uint32_t i;
 
-    for ( i = 0; i < NUM_CHANNEL; i++ )
-    {
-        p_decoder->mml_text_info.channel[i].p_mml_head = NULL;
-        p_decoder->mml_text_info.channel[i].p_mml_tail = NULL;
-        p_decoder->mml_text_info.channel[i].p_mml_pos = NULL;
-        p_decoder->mml_text_info.channel[i].reset_state = false;
-        p_decoder->mml_text_info.channel[i].end_state = false;
+    PSG_MML_MEMSET(&p_decoder->mml_text_info, 0, sizeof(p_decoder->mml_text_info));
+    PSG_MML_MEMSET(&p_decoder->tone_params, 0, sizeof(p_decoder->tone_params));
 
-        for ( j = 0; j < MAX_LOOP_NESTING_DEPTH; j++ )
-        {
-            p_decoder->mml_text_info.channel[i].p_mml_loop_head[j] = NULL;
-            p_decoder->mml_text_info.channel[i].loop_times[j] = 0;
-        }
-        p_decoder->mml_text_info.channel[i].loop_nesting_depth = 0;
-    }
-}
-
-static void mml_tone_params_init(PSG_MML_DECODER_t *p_decoder)
-{
-    uint8_t i;
     for ( i = 0; i < NUM_CHANNEL; i++ )
     {
         p_decoder->tone_params.channel[i].tempo = DEFAULT_TEMPO;
         p_decoder->tone_params.channel[i].vol_ctrl = DEFAULT_VOLUME_LEVEL&0xF;
         p_decoder->tone_params.channel[i].octave = DEFAULT_OCTAVE;
         p_decoder->tone_params.channel[i].note_len = DEFAULT_NOTE_LENGTH;
-        p_decoder->tone_params.channel[i].note_len_dots = 0;
         p_decoder->tone_params.channel[i].q24_detune = I2Q24(1);
         p_decoder->tone_params.channel[i].q24_pitchbend = I2Q24(1);
         p_decoder->tone_params.channel[i].gate_time = DEFAULT_GATE_TIME;
-
-        p_decoder->tone_params.channel[i].lfo_mode = LFO_MODE_OFF;
-        p_decoder->tone_params.channel[i].lfo_speed = 0;
-        p_decoder->tone_params.channel[i].lfo_depth = 0;
-        p_decoder->tone_params.channel[i].lfo_delay_tk = 0;
-
-        p_decoder->tone_params.channel[i].soft_env_mode = SOFT_ENVELOPE_MODE_OFF;
-        p_decoder->tone_params.channel[i].soft_env_sustain = 0;
-        p_decoder->tone_params.channel[i].soft_env_attack_tk = 0;
-        p_decoder->tone_params.channel[i].soft_env_hold_tk = 0;
-        p_decoder->tone_params.channel[i].soft_env_decay_tk = 0;
-        p_decoder->tone_params.channel[i].soft_env_fade_tk = 0;
-        p_decoder->tone_params.channel[i].soft_env_release_tk = 0;
-
-        p_decoder->tone_params.channel[i].legato_effect = false;
     }
 }
 
@@ -601,8 +568,7 @@ void psg_mml_decode_init(PSG_MML_DECODER_t *p_decoder, uint16_t tick_hz)
     p_decoder->tick_hz = tick_hz;
     p_decoder->decode_flags = 0;
 
-    mml_text_info_init(p_decoder);
-    mml_tone_params_init(p_decoder);
+    mml_params_init(p_decoder);
 
     p_decoder->load_mml_text_state = E_MML_TEXT_LOAD_STATE_UNLOAD_MML_TEXT;
 }
@@ -617,8 +583,7 @@ void psg_mml_decode_load_mml_text(PSG_MML_DECODER_t *p_decoder, const char *p_mm
     PSG_MML_ASSERT( p_decoder->load_mml_text_state != E_MML_TEXT_LOAD_STATE_UNINITIALIZED );
     p_decoder->decode_flags = flags;
 
-    mml_text_info_init(p_decoder);
-    mml_tone_params_init(p_decoder);
+    mml_params_init(p_decoder);
 
     p_decoder->load_mml_text_state = E_MML_TEXT_LOAD_STATE_UNLOAD_MML_TEXT;
 
