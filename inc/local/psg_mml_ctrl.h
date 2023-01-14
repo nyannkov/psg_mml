@@ -40,7 +40,6 @@ typedef enum
     E_PSG_MML_CTRL_STATE_END
 } PSG_MML_CTRL_STATE_t;
 
-#pragma pack(1)
 typedef struct
 {
     bool        active;
@@ -127,7 +126,6 @@ typedef struct
     } channel[NUM_CHANNEL];
 } PSG_MML_CTRL_t;
 
-#pragma pack()
 
 void psg_mml_ctrl_init(PSG_MML_CTRL_t *p_ctrl, uint8_t use_channel_num);
 void psg_mml_ctrl_proc(PSG_MML_CTRL_t *p_ctrl, PSG_MML_FIFO_t *p_fifo);

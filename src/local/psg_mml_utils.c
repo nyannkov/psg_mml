@@ -21,37 +21,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#ifndef PSG_MML_CONF_H
-#define PSG_MML_CONF_H
+#include "../../inc/local/psg_mml_local.h"
+#include "../../inc/local/psg_mml_utils.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif/*__cplusplus*/
-
-#include <stdint.h>
-#include <stdbool.h>
-#include <string.h>
-#include <assert.h>
-#include "hardware/irq.h"
-
-#define PSG_MML_SLOT_TOTAL_NUM       (1)
-#define PSG_MML_FIFO_SCALE           (2)
-/*#define PSG_MML_SHARE_SLOT0_DRIVER   true     */
-
-#ifdef DEBUG
-#define PSG_MML_ASSERT(TF)              assert((TF))
-#else
-#define PSG_MML_ASSERT(TF)
-#endif
-
-#define PSG_MML_DISABLE_PERIODIC_CONTROL()           irq_set_enabled(PWM_IRQ_WRAP, false)
-#define PSG_MML_ENABLE_PERIODIC_CONTROL()            irq_set_enabled(PWM_IRQ_WRAP, true)       
-
-#define PSG_MML_HOOK_START_PERIODIC_CONTROL()
-#define PSG_MML_HOOK_END_PERIODIC_CONTROL()
-
-#ifdef __cplusplus
+void *psg_mml_memcpy(void *p_dest, const void *p_src, size_t n)
+{
+    size_t i;
+    for ( i = 0; i < n; i++ )
+    {
+        ((uint8_t *)p_dest)[i] = ((uint8_t *)p_src)[i];
+    }
+    return p_dest;
 }
-#endif/*__cplusplus*/
 
-#endif/*PSG_MML_CONF_H*/
+void *psg_mml_memset(void *p_dest, int c, size_t n)
+{
+    size_t i;
+    for ( i = 0; i < n; i++ )
+    {
+        ((uint8_t *)p_dest)[i] = c;
+    }
+    return p_dest;
+}

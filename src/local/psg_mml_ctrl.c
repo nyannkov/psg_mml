@@ -241,9 +241,17 @@ static inline void proc_command(PSG_MML_CTRL_t *p_ctrl, uint8_t ch, const PSG_MM
 
     case MSG_TYPE_SETTINGS_2:
 
-        p_time->gate = U16(p_psg_cmd->data.settings_2.gate_time_tk_hi, p_psg_cmd->data.settings_2.gate_time_tk_lo);
+        p_ctrl->reg[p_psg_cmd->data.settings_2.addr1].data = p_psg_cmd->data.settings_2.data1;
+        p_ctrl->reg[p_psg_cmd->data.settings_2.addr1].flag = 1;
+        p_ctrl->reg[p_psg_cmd->data.settings_2.addr2].data = p_psg_cmd->data.settings_2.data2;
+        p_ctrl->reg[p_psg_cmd->data.settings_2.addr2].flag = 1;
+        break;
+
+    case MSG_TYPE_SETTINGS_3:
+
+        p_time->gate = U16(p_psg_cmd->data.settings_3.gate_time_tk_hi, p_psg_cmd->data.settings_3.gate_time_tk_lo);
         p_pitchbend->q12_tp_base= I2Q12( U16(p_ctrl->reg[2*ch+1].data, p_ctrl->reg[2*ch+0].data) );
-        p_pitchbend->q12_tp_end = I2Q12( U16(p_psg_cmd->data.settings_2.tp_end_hi, p_psg_cmd->data.settings_2.tp_end_lo) );
+        p_pitchbend->q12_tp_end = I2Q12( U16(p_psg_cmd->data.settings_3.tp_end_hi, p_psg_cmd->data.settings_3.tp_end_lo) );
         break;
 
     case MSG_TYPE_NOTE_ON:
@@ -489,65 +497,12 @@ static inline void proc_pitchbend(PSG_MML_CTRL_t *p_ctrl, uint8_t ch, PSG_MML_PI
 
 void psg_mml_ctrl_init(PSG_MML_CTRL_t *p_ctrl, uint8_t use_channel_num)
 {
-    uint32_t i;
-
-    psg_mml_ctrl_set_state(p_ctrl, E_PSG_MML_CTRL_STATE_UNINITIALIZED);
-
-    for ( i = 0; i < NUM_CHANNEL; i++ )
-    {
-        /* Initialize lfo */
-        p_ctrl->channel[i].lfo.mode = LFO_MODE_OFF;
-        p_ctrl->channel[i].lfo.depth = 0;
-        p_ctrl->channel[i].lfo.speed = 0;
-        p_ctrl->channel[i].lfo.active = false;
-        p_ctrl->channel[i].lfo.q12_omega = I2Q12(0);
-        p_ctrl->channel[i].lfo.q12_delta = I2Q12(0);
-        p_ctrl->channel[i].lfo.theta = 0;
-        p_ctrl->channel[i].lfo.delay_tk = 0;
-        p_ctrl->channel[i].lfo.q24_tp_frac;
-
-        /* Initialize time */
-        p_ctrl->channel[i].time.note_on = 0;
-        p_ctrl->channel[i].time.gate = 0;
-        p_ctrl->channel[i].time.soft_env_cnt = 0;
-        p_ctrl->channel[i].time.lfo_delay_cnt = 0;
-        p_ctrl->channel[i].time.pitchbend_cnt = 0;
-
-        /* Initialize software envelope generator */
-        p_ctrl->channel[i].soft_env.mode = SOFT_ENVELOPE_MODE_OFF;
-        p_ctrl->channel[i].soft_env.attack_tk = 0;
-        p_ctrl->channel[i].soft_env.hold_tk = 0;
-        p_ctrl->channel[i].soft_env.decay_tk = 0;
-        p_ctrl->channel[i].soft_env.fade_tk = 0;
-        p_ctrl->channel[i].soft_env.release_tk = 0;
-        p_ctrl->channel[i].soft_env.q12_rate = 0;
-        p_ctrl->channel[i].soft_env.q12_volume = 0;
-        p_ctrl->channel[i].soft_env.q12_top_volume = 0;
-        p_ctrl->channel[i].soft_env.q12_sus_volume = 0;
-        p_ctrl->channel[i].soft_env.state = E_SOFT_ENV_STATE_INIT_NOTE_ON;
-        p_ctrl->channel[i].soft_env.legato_effect = false;
-
-        /* Initialize pitchbend */
-        p_ctrl->channel[i].pitchbend.q12_tp = 0;
-        p_ctrl->channel[i].pitchbend.q12_tp_base = 0;
-        p_ctrl->channel[i].pitchbend.q12_tp_end = 0;
-        p_ctrl->channel[i].pitchbend.q12_tp_delta = 0;
-        p_ctrl->channel[i].pitchbend.state = E_PITCHBEND_STATE_STOP;
-    }
-
-    for ( i = MIN_PSG_REG_ADDR; i <= MAX_PSG_REG_ADDR; i++ )
-    {
-        p_ctrl->reg[i].data = 0;
-        p_ctrl->reg[i].flag = 0;
-
-    }
+    PSG_MML_MEMSET(p_ctrl, 0, sizeof(PSG_MML_CTRL_t));
 
     p_ctrl->reg[PSG_REG_ADDR_MIXER].data = PSG_REG_ALL_MUTE;
     p_ctrl->reg[PSG_REG_ADDR_MIXER].flag = (1<<use_channel_num)-1;
 
     p_ctrl->use_channel_num = use_channel_num;
-    p_ctrl->channel_end_counter = 0;
-
     psg_mml_ctrl_set_state(p_ctrl, E_PSG_MML_CTRL_STATE_STOP);
 }
 

@@ -52,7 +52,7 @@ extern "C" {
 #define DECODE_STATUS_START                     (0)
 #define DECODE_STATUS_END                       (1)
 
-#define MAX_PSG_MML_MSG_NUM                     (16)
+#define MAX_PSG_MML_MSG_NUM                     (14)
 
 #define MAX_MML_TEXT_LEN                        ((size_t)(~(size_t)2))
 
