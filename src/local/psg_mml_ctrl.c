@@ -241,9 +241,17 @@ static inline void proc_command(PSG_MML_CTRL_t *p_ctrl, uint8_t ch, const PSG_MM
 
     case MSG_TYPE_SETTINGS_2:
 
-        p_time->gate = U16(p_psg_cmd->data.settings_2.gate_time_tk_hi, p_psg_cmd->data.settings_2.gate_time_tk_lo);
+        p_ctrl->reg[p_psg_cmd->data.settings_2.addr1].data = p_psg_cmd->data.settings_2.data1;
+        p_ctrl->reg[p_psg_cmd->data.settings_2.addr1].flag = 1;
+        p_ctrl->reg[p_psg_cmd->data.settings_2.addr2].data = p_psg_cmd->data.settings_2.data2;
+        p_ctrl->reg[p_psg_cmd->data.settings_2.addr2].flag = 1;
+        break;
+
+    case MSG_TYPE_SETTINGS_3:
+
+        p_time->gate = U16(p_psg_cmd->data.settings_3.gate_time_tk_hi, p_psg_cmd->data.settings_3.gate_time_tk_lo);
         p_pitchbend->q12_tp_base= I2Q12( U16(p_ctrl->reg[2*ch+1].data, p_ctrl->reg[2*ch+0].data) );
-        p_pitchbend->q12_tp_end = I2Q12( U16(p_psg_cmd->data.settings_2.tp_end_hi, p_psg_cmd->data.settings_2.tp_end_lo) );
+        p_pitchbend->q12_tp_end = I2Q12( U16(p_psg_cmd->data.settings_3.tp_end_hi, p_psg_cmd->data.settings_3.tp_end_lo) );
         break;
 
     case MSG_TYPE_NOTE_ON:

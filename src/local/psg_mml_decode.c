@@ -1079,14 +1079,11 @@ static void mml_decode_operate_mixer(PSG_MML_DECODER_t *p_decoder, uint8_t ch, P
             tp_end = shift_tp(tp, p_decoder->tone_params.channel[ch].q24_pitchbend);
         }
 
-        p_out->msg[index].type = MSG_TYPE_SETTINGS_1;
-        p_out->msg[index].data.settings_1.addr = 2*ch;
-        p_out->msg[index].data.settings_1.data = U16_LO(tp);
-        index++;
-
-        p_out->msg[index].type = MSG_TYPE_SETTINGS_1;
-        p_out->msg[index].data.settings_1.addr = 2*ch + 1;
-        p_out->msg[index].data.settings_1.data = U16_HI(tp);
+        p_out->msg[index].type = MSG_TYPE_SETTINGS_2;
+        p_out->msg[index].data.settings_2.addr1 = 2*ch;
+        p_out->msg[index].data.settings_2.data1 = U16_LO(tp);
+        p_out->msg[index].data.settings_2.addr2 = 2*ch + 1;
+        p_out->msg[index].data.settings_2.data2 = U16_HI(tp);
         index++;
     }
     else
@@ -1115,14 +1112,11 @@ static void mml_decode_operate_mixer(PSG_MML_DECODER_t *p_decoder, uint8_t ch, P
         if ( (p_decoder->tone_params.channel[ch].vol_ctrl & (1<<4)) != 0 )
         {
             /* To reload 5bit counter of the envelope generator. */
-            p_out->msg[index].type = MSG_TYPE_SETTINGS_1;
-            p_out->msg[index].data.settings_1.addr = 0x0B;
-            p_out->msg[index].data.settings_1.data = U16_LO(p_decoder->tone_params.ep);
-            index++;
-
-            p_out->msg[index].type = MSG_TYPE_SETTINGS_1;
-            p_out->msg[index].data.settings_1.addr = 0x0C;
-            p_out->msg[index].data.settings_1.data = U16_HI(p_decoder->tone_params.ep);
+            p_out->msg[index].type = MSG_TYPE_SETTINGS_2;
+            p_out->msg[index].data.settings_2.addr1 = 0x0B;
+            p_out->msg[index].data.settings_2.data1 = U16_LO(p_decoder->tone_params.ep);
+            p_out->msg[index].data.settings_2.addr2 = 0x0C;
+            p_out->msg[index].data.settings_2.data2 = U16_HI(p_decoder->tone_params.ep);
             index++;
 
             if ( !p_decoder->tone_params.channel[ch].legato_effect )
@@ -1209,11 +1203,11 @@ static void mml_decode_operate_mixer(PSG_MML_DECODER_t *p_decoder, uint8_t ch, P
         q12_gate_time = (q12_note_on_time * (q12_t)p_decoder->tone_params.channel[ch].gate_time)/MAX_GATE_TIME;
         gate_time_tk = Q_INT(q12_gate_time, 12);
 
-        p_out->msg[index].type = MSG_TYPE_SETTINGS_2;
-        p_out->msg[index].data.settings_2.gate_time_tk_hi = U16_HI(gate_time_tk);
-        p_out->msg[index].data.settings_2.gate_time_tk_lo = U16_LO(gate_time_tk);
-        p_out->msg[index].data.settings_2.tp_end_hi = U16_HI(tp_end);
-        p_out->msg[index].data.settings_2.tp_end_lo = U16_LO(tp_end);
+        p_out->msg[index].type = MSG_TYPE_SETTINGS_3;
+        p_out->msg[index].data.settings_3.gate_time_tk_hi = U16_HI(gate_time_tk);
+        p_out->msg[index].data.settings_3.gate_time_tk_lo = U16_LO(gate_time_tk);
+        p_out->msg[index].data.settings_3.tp_end_hi = U16_HI(tp_end);
+        p_out->msg[index].data.settings_3.tp_end_lo = U16_LO(tp_end);
         index++;
 
         req_mixer = 0x00;
