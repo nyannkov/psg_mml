@@ -27,9 +27,79 @@
 #include "../../inc/local/psg_mml_fifo.h"
 #include "../../inc/local/psg_mml_decode.h"
 
+
+#ifndef PSG_MML_USE_TP_TABLE
+#define PSG_MML_USE_TP_TABLE                  (1)
+#endif/*PSG_MML_USE_TP_TABLE*/
+
+
+#if (PSG_MML_USE_TP_TABLE==0) 
+/* Not use tp_table. */
+
+#ifndef PSG_MML_FSCLOCK_001HZ
+#define PSG_MML_FSCLOCK_001HZ       (2000000uL*100uL)   /* 2.00 MHz (unit: 0.01 Hz) */
+#endif/*PSG_MML_FSCLOCK_001HZ*/
+
+#if (PSG_MML_FSCLOCK_001HZ <= 0)
+#error PSG_MML_FSCLOCK_001HZ must be greater than 0.
+#endif
+
+static uint16_t calc_tp(int16_t n)
+{
+    lq24_t lq24_hertz;
+    lq24_t lq24_clock;
+    q24_t  q24_f;
+    int32_t r;
+    int32_t q;
+    uint32_t tp;
+
+    n -= 45;
+    q = n/12;
+
+    lq24_hertz = I2LQ24(440);
+    if ( n >= 0 )
+    {
+        lq24_hertz <<= q;
+        q24_f = Q_CALCTP_FACTOR;
+    }
+    else
+    {
+        lq24_hertz >>= q;
+        q24_f = Q_CALCTP_FACTOR_N;
+        n *= -1;
+    }
+
+    r = n%12;
+    while ( r-- > 0 )
+    {
+        lq24_hertz *= q24_f;
+        lq24_hertz >>= 24;
+    }
+
+    lq24_clock = I2LQ24(PSG_MML_FSCLOCK_001HZ);
+
+    tp = lq24_clock/(1600*lq24_hertz);
+
+    if ( tp > MAX_TP )
+    {
+        tp = MAX_TP;
+    }
+    
+    return (uint16_t)tp;
+}
+
+#define GET_TP(n)       calc_tp((n))
+
+#else
+/* Use tp_table. */
+
+
 #define NUM_TP_TABLE        (MAX_NOTE_NUMBER - MIN_NOTE_NUMBER + 1)
 
-/* fsc = clock/2 = 2 MHz */
+#if (PSG_MML_USE_TP_TABLE==1)
+/* Use default table. */
+
+/* fsclock = 2 MHz */
 static const uint16_t tp_table[NUM_TP_TABLE] = 
 {
     0xEEE, 0xE17, 0xD4D, 0xC8E, 0xBD9, 0xB2F, 0xA8E, 0x9F7, 0x967, 0x8E0, 0x861, 0x7E8,
@@ -41,6 +111,17 @@ static const uint16_t tp_table[NUM_TP_TABLE] =
     0x03B, 0x038, 0x035, 0x032, 0x02F, 0x02C, 0x02A, 0x027, 0x025, 0x023, 0x021, 0x01F,
     0x01D, 0x01C, 0x01A, 0x019, 0x017, 0x016, 0x015, 0x013, 0x012, 0x011, 0x010, 0x00F,
 };
+
+#else
+/* Use user defined tp_table. */
+
+#include "psg_mml_usr_tp_table.h"
+
+#endif
+
+#define GET_TP(n)       tp_table[(n)]
+
+#endif
 
 static void mml_decode_operate_mixer(PSG_MML_DECODER_t *p_decoder, uint8_t ch, PSG_MML_MSG_t *p_out);
 static void mml_decode_dollar(PSG_MML_DECODER_t *p_decoder, uint8_t ch);
@@ -1069,10 +1150,10 @@ static void mml_decode_operate_mixer(PSG_MML_DECODER_t *p_decoder, uint8_t ch, P
     if ( note_type == E_NOTE_TYPE_TONE ) 
     {
         /* Apply detune-level to tp. */
-        tp = shift_tp(tp_table[note_num], p_decoder->tone_params.channel[ch].q24_detune);
+        tp = shift_tp(GET_TP(note_num), p_decoder->tone_params.channel[ch].q24_detune);
         if ( is_start_legato_effect )
         {
-            tp_end = shift_tp(tp_table[legato_end_note_num], p_decoder->tone_params.channel[ch].q24_detune);
+            tp_end = shift_tp(GET_TP(legato_end_note_num), p_decoder->tone_params.channel[ch].q24_detune);
         }
         else
         {
