@@ -299,6 +299,23 @@ MMLのデコード情報を格納するFIFOの長さを変更できます。こ�
  
 スロット0, 1を連携させず個別に演奏を行います。スロット0および1に個別にPSGを割り当てるような場合は，このモードを選択します。
 
+### PSG_MML_USE_TP_TABLE
+
+ノートナンバーからtpを決定する方法をこの設定値で選択します。
+デフォルトは1で，この場合，PSGのシステムクロックが2MHzの場合のtp_tableを参照します。
+
+
+この値を2すると，ユーザが定義したtp_tableを参照するようになります。
+使用するPSGのシステムクロックが2MHzではなく，別のtp_tableを参照する必要がある場合にこの値に設定します。
+なお，tp_tableはpsg_mml_usr_tp_table.h経由で参照します。このファイルのテンプレートはtemplate/psg_mml_usr_tp_table_template.hです。
+
+この値を0にすると，tp_tableによるtpの決定は行わず，ノートナンバーとPSGのシステム周波数からtpを算出するようになります。
+PSGのシステム周波数は定数PSG_MML_FSCLOCK_001HZの値を参照します。
+
+### PSG_MML_FSCLOCK_001HZ
+
+PSGのシステム周波数を指定します。デフォルトは200,000,000(=2MHz，単位:0.01 Hz)です。
+この値はPSG_MML_USE_TP_TABLEの値が0の場合にのみ参照されます。
 
 ### PSG_MML_DISABLE_PERIODIC_CONTROL()
 
