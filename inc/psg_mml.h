@@ -30,7 +30,7 @@ extern "C" {
 
 #include "psg_mml_conf.h"
 
-#define PSG_MML_VERSION                         "0.1.1"
+#define PSG_MML_VERSION                         "0.2.0"
 
 #ifndef PSG_MML_SLOT_TOTAL_NUM
 #define PSG_MML_SLOT_TOTAL_NUM                  (2)
