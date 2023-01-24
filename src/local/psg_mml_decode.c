@@ -148,6 +148,7 @@ static void skip_white_space(const char **pp_text);
 static uint16_t shift_tp(uint16_t tp, q24_t q24_factor);
 static void mml_params_init(PSG_MML_DECODER_t *p_decoder);
 
+static bool set_message(PSG_MML_MSG_t /*@out@*/*p_out, const PSG_MML_CMD_t *p_msg);
 
 
 static inline char to_upper_case(char c)
@@ -733,6 +734,10 @@ uint8_t psg_mml_decode_get_use_channel_num(PSG_MML_DECODER_t *p_decoder)
 
 psg_mml_decode_t psg_mml_decode_get_message(PSG_MML_DECODER_t *p_decoder, uint8_t ch,/*@out@*/ PSG_MML_MSG_t *p_out)
 {
+    bool loop_flag = false;
+    PSG_MML_CMD_t msg;
+    uint8_t msg_cnt_0;
+
     PSG_MML_ASSERT(p_decoder != NULL);
     PSG_MML_ASSERT(ch < NUM_CHANNEL);
     PSG_MML_ASSERT(p_out != NULL);
@@ -744,11 +749,9 @@ psg_mml_decode_t psg_mml_decode_get_message(PSG_MML_DECODER_t *p_decoder, uint8_
     {
         p_decoder->mml_text_info.channel[ch].reset_state = false;
 
-        p_out->msg[0].type = MSG_TYPE_DECODE_STATUS;
-        p_out->msg[0].data.decode_status.status = DECODE_STATUS_START;
-        p_out->msg_cnt = 1;
-
-        return PSG_MML_DECODE_CHANNEL_START;
+        msg.type = MSG_TYPE_DECODE_STATUS;
+        msg.data.decode_status.status = DECODE_STATUS_START;
+        set_message(p_out, &msg);
     }
 
     if ( p_decoder->mml_text_info.channel[ch].p_mml_pos >= p_decoder->mml_text_info.channel[ch].p_mml_tail )
@@ -756,215 +759,242 @@ psg_mml_decode_t psg_mml_decode_get_message(PSG_MML_DECODER_t *p_decoder, uint8_
         if ( !p_decoder->mml_text_info.channel[ch].end_state )
         {
             p_decoder->mml_text_info.channel[ch].end_state = true;
-            p_out->msg[0].type = MSG_TYPE_DECODE_STATUS;
-            p_out->msg[0].data.decode_status.status = DECODE_STATUS_END;
-            p_out->msg_cnt = 1;
+            msg.type = MSG_TYPE_DECODE_STATUS;
+            msg.data.decode_status.status = DECODE_STATUS_END;
+            set_message(p_out, &msg);
         }
 
         return PSG_MML_DECODE_CHANNEL_END;
     }
 
-    switch ( to_upper_case(p_decoder->mml_text_info.channel[ch].p_mml_pos[0]) )
+    msg_cnt_0 = p_out->msg_cnt;
+    while ( p_out->msg_cnt == msg_cnt_0 )
     {
-    case 'A':/*@fallthrough@*/
-    case 'B':/*@fallthrough@*/
-    case 'C':/*@fallthrough@*/
-    case 'D':/*@fallthrough@*/
-    case 'E':/*@fallthrough@*/
-    case 'F':/*@fallthrough@*/
-    case 'G':/*@fallthrough@*/
-    case 'H':/*@fallthrough@*/
-    case 'N':/*@fallthrough@*/
-    case 'R':
-        mml_decode_operate_mixer(p_decoder, ch, p_out);
-        break;
-    case '$':
-        mml_decode_dollar(p_decoder, ch);
-        break;
-    case 'T':
-        p_decoder->tone_params
-        .channel[ch]
-        .tempo 
-        = read_number_uint8(
-            p_decoder
-          , ch 
-          , MIN_TEMPO
-          , MAX_TEMPO
-          , DEFAULT_TEMPO
-          );
-        break;
-    case 'V':
-        p_decoder->tone_params
-        .channel[ch]
-        .vol_ctrl
-        = read_number_uint8(
-            p_decoder
-          , ch
-          , MIN_VOLUME_LEVEL
-          , MAX_VOLUME_LEVEL
-          , DEFAULT_VOLUME_LEVEL
-          );
-        break;
-    case 'S':
-        p_decoder->tone_params
-        .env_shape
-        = read_number_uint8(
-            p_decoder
-          , ch
-          , MIN_ENVELOP_SHAPE
-          , MAX_ENVELOP_SHAPE
-          , DEFAULT_ENVELOP_SHAPE
-          );
-        p_decoder->tone_params.channel[ch].vol_ctrl = (1<<4);/* 4bit:M, 3-0bit:L3-0 */
-
-        break;
-    case 'M':
-        p_decoder->tone_params
-        .ep
-        = read_number_uint16(
-            p_decoder
-          , ch
-          , MIN_ENVELOP_EP
-          , MAX_ENVELOP_EP
-          , DEFAULT_ENVELOP_EP
-          );
-        break;
-    case 'L':
-
-        /* Clear global dot counter */
-        p_decoder->tone_params.channel[ch].note_len_dots = 0;
-
-        p_decoder->tone_params
-        .channel[ch]
-        .note_len
-        = read_number_uint8(
-            p_decoder
-          , ch
-          , MIN_NOTE_LENGTH
-          , MAX_NOTE_LENGTH
-          , DEFAULT_NOTE_LENGTH
-          );
-
-        if ( *p_decoder->mml_text_info.channel[ch].p_mml_pos == '.' )
+        switch ( to_upper_case(p_decoder->mml_text_info.channel[ch].p_mml_pos[0]) )
         {
-            p_decoder->mml_text_info.channel[ch].p_mml_pos = count_dot_repetition(
-                  p_decoder->mml_text_info.channel[ch].p_mml_pos
-                , p_decoder->mml_text_info.channel[ch].p_mml_tail
-                , &p_decoder->tone_params.channel[ch].note_len_dots
-                );
-        }
-        break;
-    case 'O':
-        p_decoder->tone_params
-        .channel[ch]
-        .octave
-        = read_number_uint8(
-            p_decoder
-          , ch
-          , MIN_OCTAVE
-          , MAX_OCTAVE
-          , DEFAULT_OCTAVE
-          );
-        break;
-    case 'Q':
-        p_decoder->tone_params
-        .channel[ch]
-        .gate_time
-        = read_number_uint8(
-            p_decoder
-          , ch
-          , MIN_GATE_TIME
-          , MAX_GATE_TIME 
-          , DEFAULT_GATE_TIME
-          );
-        break;
-    case 'I':
-        p_decoder->tone_params
-        .np
-        = read_number_uint8(
-            p_decoder
-          , ch 
-          , MIN_NOISE_NP
-          , MAX_NOISE_NP
-          , DEFAULT_NOISE_NP
-        );
-        break;
-    case '<':
-        if ( p_decoder->tone_params.channel[ch].octave > MIN_OCTAVE )
-        {
-            p_decoder->tone_params.channel[ch].octave--;
-        }
-        p_decoder->mml_text_info.channel[ch].p_mml_pos++;
-        break;
-    case '>':
-        if ( p_decoder->tone_params.channel[ch].octave < MAX_OCTAVE )
-        {
-            p_decoder->tone_params.channel[ch].octave++;
-        }
-        p_decoder->mml_text_info.channel[ch].p_mml_pos++;
-        break;
-
-    case '[':
-        if ( p_decoder->mml_text_info.channel[ch].loop_nesting_depth < MAX_LOOP_NESTING_DEPTH )
-        {
-            uint16_t loop_index = 0;
-            loop_index = p_decoder->mml_text_info.channel[ch].loop_nesting_depth;
-
-            p_decoder->mml_text_info
+        case 'A':/*@fallthrough@*/
+        case 'B':/*@fallthrough@*/
+        case 'C':/*@fallthrough@*/
+        case 'D':/*@fallthrough@*/
+        case 'E':/*@fallthrough@*/
+        case 'F':/*@fallthrough@*/
+        case 'G':/*@fallthrough@*/
+        case 'H':/*@fallthrough@*/
+        case 'N':/*@fallthrough@*/
+        case 'R':
+            mml_decode_operate_mixer(p_decoder, ch, p_out);
+            break;
+        case '$':
+            mml_decode_dollar(p_decoder, ch);
+            break;
+        case 'T':
+            p_decoder->tone_params
             .channel[ch]
-            .loop_times[loop_index]
-                = read_number_int16( p_decoder, ch
-                    , MIN_LOOP_TIMES
-                    , MAX_LOOP_TIMES
-                    , DEFAULT_LOOP_TIMES);
-
-            p_decoder->mml_text_info
+            .tempo 
+            = read_number_uint8(
+                p_decoder
+              , ch 
+              , MIN_TEMPO
+              , MAX_TEMPO
+              , DEFAULT_TEMPO
+              );
+            break;
+        case 'V':
+            p_decoder->tone_params
             .channel[ch]
-            .p_mml_loop_head[loop_index]
-                = p_decoder->mml_text_info.channel[ch].p_mml_pos;
+            .vol_ctrl
+            = read_number_uint8(
+                p_decoder
+              , ch
+              , MIN_VOLUME_LEVEL
+              , MAX_VOLUME_LEVEL
+              , DEFAULT_VOLUME_LEVEL
+              );
+            break;
+        case 'S':
+            p_decoder->tone_params
+            .env_shape
+            = read_number_uint8(
+                p_decoder
+              , ch
+              , MIN_ENVELOP_SHAPE
+              , MAX_ENVELOP_SHAPE
+              , DEFAULT_ENVELOP_SHAPE
+              );
+            p_decoder->tone_params.channel[ch].vol_ctrl = (1<<4);/* 4bit:M, 3-0bit:L3-0 */
 
-            p_decoder->mml_text_info.channel[ch].loop_nesting_depth = loop_index + 1;
-        }
-        else
-        {
-            p_decoder->mml_text_info.channel[ch].p_mml_pos++;
-        }
-        break;
-    case ']':
-        if ( p_decoder->mml_text_info.channel[ch].loop_nesting_depth > 0 )
-        {
-            uint16_t loop_index = 0;
-            loop_index = p_decoder->mml_text_info.channel[ch].loop_nesting_depth - 1;
+            break;
+        case 'M':
+            p_decoder->tone_params
+            .ep
+            = read_number_uint16(
+                p_decoder
+              , ch
+              , MIN_ENVELOP_EP
+              , MAX_ENVELOP_EP
+              , DEFAULT_ENVELOP_EP
+              );
+            break;
+        case 'L':
 
-            if ( p_decoder->mml_text_info.channel[ch].loop_times[loop_index] == 1 )
+            /* Clear global dot counter */
+            p_decoder->tone_params.channel[ch].note_len_dots = 0;
+
+            p_decoder->tone_params
+            .channel[ch]
+            .note_len
+            = read_number_uint8(
+                p_decoder
+              , ch
+              , MIN_NOTE_LENGTH
+              , MAX_NOTE_LENGTH
+              , DEFAULT_NOTE_LENGTH
+              );
+
+            if ( *p_decoder->mml_text_info.channel[ch].p_mml_pos == '.' )
             {
-                /* Loop end */
-                p_decoder->mml_text_info.channel[ch].loop_times[loop_index] = 0;
-                p_decoder->mml_text_info.channel[ch].loop_nesting_depth = loop_index;
-                p_decoder->mml_text_info.channel[ch].p_mml_pos++;
+                p_decoder->mml_text_info.channel[ch].p_mml_pos = count_dot_repetition(
+                      p_decoder->mml_text_info.channel[ch].p_mml_pos
+                    , p_decoder->mml_text_info.channel[ch].p_mml_tail
+                    , &p_decoder->tone_params.channel[ch].note_len_dots
+                    );
+            }
+            break;
+        case 'O':
+            p_decoder->tone_params
+            .channel[ch]
+            .octave
+            = read_number_uint8(
+                p_decoder
+              , ch
+              , MIN_OCTAVE
+              , MAX_OCTAVE
+              , DEFAULT_OCTAVE
+              );
+            break;
+        case 'Q':
+            p_decoder->tone_params
+            .channel[ch]
+            .gate_time
+            = read_number_uint8(
+                p_decoder
+              , ch
+              , MIN_GATE_TIME
+              , MAX_GATE_TIME 
+              , DEFAULT_GATE_TIME
+              );
+            break;
+        case 'I':
+            p_decoder->tone_params
+            .np
+            = read_number_uint8(
+                p_decoder
+              , ch 
+              , MIN_NOISE_NP
+              , MAX_NOISE_NP
+              , DEFAULT_NOISE_NP
+            );
+            break;
+        case '<':
+            if ( p_decoder->tone_params.channel[ch].octave > MIN_OCTAVE )
+            {
+                p_decoder->tone_params.channel[ch].octave--;
+            }
+            p_decoder->mml_text_info.channel[ch].p_mml_pos++;
+            break;
+        case '>':
+            if ( p_decoder->tone_params.channel[ch].octave < MAX_OCTAVE )
+            {
+                p_decoder->tone_params.channel[ch].octave++;
+            }
+            p_decoder->mml_text_info.channel[ch].p_mml_pos++;
+            break;
+
+        case '[':
+            if ( p_decoder->mml_text_info.channel[ch].loop_nesting_depth < MAX_LOOP_NESTING_DEPTH )
+            {
+                uint16_t loop_index = 0;
+
+                loop_flag = true;
+                loop_index = p_decoder->mml_text_info.channel[ch].loop_nesting_depth;
+
+                p_decoder->mml_text_info
+                .channel[ch]
+                .loop_times[loop_index]
+                    = read_number_int16( p_decoder, ch
+                        , MIN_LOOP_TIMES
+                        , MAX_LOOP_TIMES
+                        , DEFAULT_LOOP_TIMES);
+
+                p_decoder->mml_text_info
+                .channel[ch]
+                .p_mml_loop_head[loop_index]
+                    = p_decoder->mml_text_info.channel[ch].p_mml_pos;
+
+                p_decoder->mml_text_info.channel[ch].loop_nesting_depth = loop_index + 1;
             }
             else
             {
-                if ( p_decoder->mml_text_info.channel[ch].loop_times[loop_index] > 1 )
+                p_decoder->mml_text_info.channel[ch].p_mml_pos++;
+            }
+            break;
+        case ']':
+            if ( p_decoder->mml_text_info.channel[ch].loop_nesting_depth > 0 )
+            {
+                uint16_t loop_index = 0;
+                loop_index = p_decoder->mml_text_info.channel[ch].loop_nesting_depth - 1;
+
+                if ( loop_flag )
                 {
-                    p_decoder->mml_text_info.channel[ch].loop_times[loop_index]--;
+                    /* A loop with no message. */
+                    /* Force exit from the loop. */
+                    p_decoder->mml_text_info.channel[ch].loop_times[loop_index] = 0;
+                    p_decoder->mml_text_info.channel[ch].loop_nesting_depth = loop_index;
+                    p_decoder->mml_text_info.channel[ch].p_mml_pos++;
+                }
+                else if ( p_decoder->mml_text_info.channel[ch].loop_times[loop_index] == 1 )
+                {
+                    /* Loop end */
+                    p_decoder->mml_text_info.channel[ch].loop_times[loop_index] = 0;
+                    p_decoder->mml_text_info.channel[ch].loop_nesting_depth = loop_index;
+                    p_decoder->mml_text_info.channel[ch].p_mml_pos++;
                 }
                 else
                 {
-                    /* Infinite loop */
-                }
+                    if ( p_decoder->mml_text_info.channel[ch].loop_times[loop_index] > 1 )
+                    {
+                        p_decoder->mml_text_info.channel[ch].loop_times[loop_index]--;
+                    }
+                    else
+                    {
+                        /* Infinite loop */
+                    }
 
-                p_decoder->mml_text_info.channel[ch].p_mml_pos = p_decoder->mml_text_info.channel[ch].p_mml_loop_head[loop_index];
+                    p_decoder->mml_text_info.channel[ch].p_mml_pos = p_decoder->mml_text_info.channel[ch].p_mml_loop_head[loop_index];
+                }
             }
-        }
-        else
-        {
+            else
+            {
+                p_decoder->mml_text_info.channel[ch].p_mml_pos++;
+            }
+            break;
+        default:
             p_decoder->mml_text_info.channel[ch].p_mml_pos++;
+            break;
         }
-        break;
-    default:
-        p_decoder->mml_text_info.channel[ch].p_mml_pos++;
-        break;
+
+        if ( p_decoder->mml_text_info.channel[ch].p_mml_pos >= p_decoder->mml_text_info.channel[ch].p_mml_tail )
+        {
+            if ( !p_decoder->mml_text_info.channel[ch].end_state )
+            {
+                p_decoder->mml_text_info.channel[ch].end_state = true;
+                msg.type = MSG_TYPE_DECODE_STATUS;
+                msg.data.decode_status.status = DECODE_STATUS_END;
+                set_message(p_out, &msg);
+            }
+
+            return PSG_MML_DECODE_CHANNEL_END;
+        }
     }
 
     return PSG_MML_DECODE_SUCCESS;
@@ -984,7 +1014,7 @@ static void mml_decode_operate_mixer(PSG_MML_DECODER_t *p_decoder, uint8_t ch, P
     char head;
     uint8_t col_num;
     uint8_t dot_cnt;
-    uint8_t index;
+    PSG_MML_CMD_t msg;
     uint8_t req_mixer;
     q12_t q12_note_on_time;
     q12_t q12_gate_time;
@@ -1143,10 +1173,6 @@ static void mml_decode_operate_mixer(PSG_MML_DECODER_t *p_decoder, uint8_t ch, P
     p_decoder->mml_text_info.channel[ch].p_mml_pos = p_pos;
 
     /* Create message */
-    p_out->msg_cnt = 0;
-
-    index = 0;
-
     if ( note_type == E_NOTE_TYPE_TONE ) 
     {
         /* Apply detune-level to tp. */
@@ -1160,12 +1186,12 @@ static void mml_decode_operate_mixer(PSG_MML_DECODER_t *p_decoder, uint8_t ch, P
             tp_end = shift_tp(tp, p_decoder->tone_params.channel[ch].q24_pitchbend);
         }
 
-        p_out->msg[index].type = MSG_TYPE_SETTINGS_2;
-        p_out->msg[index].data.settings_2.addr1 = 2*ch;
-        p_out->msg[index].data.settings_2.data1 = U16_LO(tp);
-        p_out->msg[index].data.settings_2.addr2 = 2*ch + 1;
-        p_out->msg[index].data.settings_2.data2 = U16_HI(tp);
-        index++;
+        msg.type = MSG_TYPE_SETTINGS_2;
+        msg.data.settings_2.addr1 = 2*ch;
+        msg.data.settings_2.data1 = U16_LO(tp);
+        msg.data.settings_2.addr2 = 2*ch + 1;
+        msg.data.settings_2.data2 = U16_HI(tp);
+        set_message(p_out, &msg);
     }
     else
     {
@@ -1176,72 +1202,72 @@ static void mml_decode_operate_mixer(PSG_MML_DECODER_t *p_decoder, uint8_t ch, P
     /* Set NP */
     if ( note_type == E_NOTE_TYPE_NOISE )
     {
-        p_out->msg[index].type = MSG_TYPE_SETTINGS_1;
-        p_out->msg[index].data.settings_1.addr = 0x06;
-        p_out->msg[index].data.settings_1.data = p_decoder->tone_params.np;
-        index++;
+       msg.type = MSG_TYPE_SETTINGS_1;
+       msg.data.settings_1.addr = 0x06;
+       msg.data.settings_1.data = p_decoder->tone_params.np;
+       set_message(p_out, &msg);
     }
 
     if ( ( note_type == E_NOTE_TYPE_TONE ) 
       || ( note_type == E_NOTE_TYPE_NOISE ) )
     {
-        p_out->msg[index].type = MSG_TYPE_SETTINGS_1;
-        p_out->msg[index].data.settings_1.addr = ch + 0x08;
-        p_out->msg[index].data.settings_1.data = p_decoder->tone_params.channel[ch].vol_ctrl;
-        index++;
+        msg.type = MSG_TYPE_SETTINGS_1;
+        msg.data.settings_1.addr = ch + 0x08;
+        msg.data.settings_1.data = p_decoder->tone_params.channel[ch].vol_ctrl;
+        set_message(p_out, &msg);
 
         if ( (p_decoder->tone_params.channel[ch].vol_ctrl & (1<<4)) != 0 )
         {
             /* To reload 5bit counter of the envelope generator. */
-            p_out->msg[index].type = MSG_TYPE_SETTINGS_2;
-            p_out->msg[index].data.settings_2.addr1 = 0x0B;
-            p_out->msg[index].data.settings_2.data1 = U16_LO(p_decoder->tone_params.ep);
-            p_out->msg[index].data.settings_2.addr2 = 0x0C;
-            p_out->msg[index].data.settings_2.data2 = U16_HI(p_decoder->tone_params.ep);
-            index++;
+            msg.type = MSG_TYPE_SETTINGS_2;
+            msg.data.settings_2.addr1 = 0x0B;
+            msg.data.settings_2.data1 = U16_LO(p_decoder->tone_params.ep);
+            msg.data.settings_2.addr2 = 0x0C;
+            msg.data.settings_2.data2 = U16_HI(p_decoder->tone_params.ep);
+            set_message(p_out, &msg);
 
             if ( !p_decoder->tone_params.channel[ch].legato_effect )
             {
                 /* Set envelope shape */
-                p_out->msg[index].type = MSG_TYPE_SETTINGS_1;
-                p_out->msg[index].data.settings_1.addr = 0x0D;
-                p_out->msg[index].data.settings_1.data = p_decoder->tone_params.env_shape;
-                index++;
+                msg.type = MSG_TYPE_SETTINGS_1;
+                msg.data.settings_1.addr = 0x0D;
+                msg.data.settings_1.data = p_decoder->tone_params.env_shape;
+                set_message(p_out, &msg);
             }
 
             /* Software-Envelope generator(Turn OFF regardless of the set value.) */
-            p_out->msg[index].type = MSG_TYPE_SOFT_ENV_1;
-            p_out->msg[index].data.soft_env_1.mode = SOFT_ENVELOPE_MODE_OFF;
-            index++;
+            msg.type = MSG_TYPE_SOFT_ENV_1;
+            msg.data.soft_env_1.mode = SOFT_ENVELOPE_MODE_OFF;
+            set_message(p_out, &msg);
         }
         else
         {
             /* Software-Envelope generator */
-            p_out->msg[index].type = MSG_TYPE_SOFT_ENV_1;
-            p_out->msg[index].data.soft_env_1.mode      = p_decoder->tone_params.channel[ch].soft_env_mode;
-            p_out->msg[index].data.soft_env_1.top_volume= p_decoder->tone_params.channel[ch].vol_ctrl&0xF;
-            p_out->msg[index].data.soft_env_1.sus_volume= (uint8_t)(((uint16_t)p_out->msg[index].data.soft_env_1.top_volume*p_decoder->tone_params.channel[ch].soft_env_sustain+50)/100); 
-            p_out->msg[index].data.soft_env_1.legato_effect = (p_decoder->tone_params.channel[ch].legato_effect ? 1 : 0);
-            index++;
+            msg.type = MSG_TYPE_SOFT_ENV_1;
+            msg.data.soft_env_1.mode      = p_decoder->tone_params.channel[ch].soft_env_mode;
+            msg.data.soft_env_1.top_volume= p_decoder->tone_params.channel[ch].vol_ctrl&0xF;
+            msg.data.soft_env_1.sus_volume= (uint8_t)(((uint16_t)msg.data.soft_env_1.top_volume*p_decoder->tone_params.channel[ch].soft_env_sustain+50)/100); 
+            msg.data.soft_env_1.legato_effect = (p_decoder->tone_params.channel[ch].legato_effect ? 1 : 0);
+            set_message(p_out, &msg);
 
-            p_out->msg[index].type = MSG_TYPE_SOFT_ENV_2;
-            p_out->msg[index].data.soft_env_2.attack_tk_hi = U16_HI(p_decoder->tone_params.channel[ch].soft_env_attack_tk);
-            p_out->msg[index].data.soft_env_2.attack_tk_lo = U16_LO(p_decoder->tone_params.channel[ch].soft_env_attack_tk);
-            p_out->msg[index].data.soft_env_2.hold_tk_hi   = U16_HI(p_decoder->tone_params.channel[ch].soft_env_hold_tk);
-            p_out->msg[index].data.soft_env_2.hold_tk_lo   = U16_LO(p_decoder->tone_params.channel[ch].soft_env_hold_tk);
-            index++;
+            msg.type = MSG_TYPE_SOFT_ENV_2;
+            msg.data.soft_env_2.attack_tk_hi = U16_HI(p_decoder->tone_params.channel[ch].soft_env_attack_tk);
+            msg.data.soft_env_2.attack_tk_lo = U16_LO(p_decoder->tone_params.channel[ch].soft_env_attack_tk);
+            msg.data.soft_env_2.hold_tk_hi   = U16_HI(p_decoder->tone_params.channel[ch].soft_env_hold_tk);
+            msg.data.soft_env_2.hold_tk_lo   = U16_LO(p_decoder->tone_params.channel[ch].soft_env_hold_tk);
+            set_message(p_out, &msg);
 
-            p_out->msg[index].type = MSG_TYPE_SOFT_ENV_3;
-            p_out->msg[index].data.soft_env_3.decay_tk_hi  = U16_HI(p_decoder->tone_params.channel[ch].soft_env_decay_tk);
-            p_out->msg[index].data.soft_env_3.decay_tk_lo  = U16_LO(p_decoder->tone_params.channel[ch].soft_env_decay_tk);
-            p_out->msg[index].data.soft_env_3.fade_tk_hi   = U16_HI(p_decoder->tone_params.channel[ch].soft_env_fade_tk);
-            p_out->msg[index].data.soft_env_3.fade_tk_lo   = U16_LO(p_decoder->tone_params.channel[ch].soft_env_fade_tk);
-            index++;
+            msg.type = MSG_TYPE_SOFT_ENV_3;
+            msg.data.soft_env_3.decay_tk_hi  = U16_HI(p_decoder->tone_params.channel[ch].soft_env_decay_tk);
+            msg.data.soft_env_3.decay_tk_lo  = U16_LO(p_decoder->tone_params.channel[ch].soft_env_decay_tk);
+            msg.data.soft_env_3.fade_tk_hi   = U16_HI(p_decoder->tone_params.channel[ch].soft_env_fade_tk);
+            msg.data.soft_env_3.fade_tk_lo   = U16_LO(p_decoder->tone_params.channel[ch].soft_env_fade_tk);
+            set_message(p_out, &msg);
 
-            p_out->msg[index].type = MSG_TYPE_SOFT_ENV_4;
-            p_out->msg[index].data.soft_env_4.release_tk_hi = U16_HI(p_decoder->tone_params.channel[ch].soft_env_release_tk);
-            p_out->msg[index].data.soft_env_4.release_tk_lo = U16_LO(p_decoder->tone_params.channel[ch].soft_env_release_tk);
-            index++;
+            msg.type = MSG_TYPE_SOFT_ENV_4;
+            msg.data.soft_env_4.release_tk_hi = U16_HI(p_decoder->tone_params.channel[ch].soft_env_release_tk);
+            msg.data.soft_env_4.release_tk_lo = U16_LO(p_decoder->tone_params.channel[ch].soft_env_release_tk);
+            set_message(p_out, &msg);
         }
     }
 
@@ -1249,22 +1275,22 @@ static void mml_decode_operate_mixer(PSG_MML_DECODER_t *p_decoder, uint8_t ch, P
     {
         if ( !p_decoder->tone_params.channel[ch].legato_effect )
         {
-            p_out->msg[index].type = MSG_TYPE_LFO_1;
-            p_out->msg[index].data.lfo_1.mode  = p_decoder->tone_params.channel[ch].lfo_mode;
-            p_out->msg[index].data.lfo_1.depth = p_decoder->tone_params.channel[ch].lfo_depth;
-            p_out->msg[index].data.lfo_1.delay_tk_hi = U16_HI(p_decoder->tone_params.channel[ch].lfo_delay_tk);
-            p_out->msg[index].data.lfo_1.delay_tk_lo = U16_LO(p_decoder->tone_params.channel[ch].lfo_delay_tk);
-            index++;
+            msg.type = MSG_TYPE_LFO_1;
+            msg.data.lfo_1.mode  = p_decoder->tone_params.channel[ch].lfo_mode;
+            msg.data.lfo_1.depth = p_decoder->tone_params.channel[ch].lfo_depth;
+            msg.data.lfo_1.delay_tk_hi = U16_HI(p_decoder->tone_params.channel[ch].lfo_delay_tk);
+            msg.data.lfo_1.delay_tk_lo = U16_LO(p_decoder->tone_params.channel[ch].lfo_delay_tk);
+            set_message(p_out, &msg);
 
-            p_out->msg[index].type = MSG_TYPE_LFO_2;
+            msg.type = MSG_TYPE_LFO_2;
             q12_omega = I2Q12(1);
             q12_omega *= (uint32_t)p_decoder->tone_params.channel[ch].lfo_depth*4*p_decoder->tone_params.channel[ch].lfo_speed;
             q12_omega /= ((uint32_t)p_decoder->tick_hz*MAX_LFO_PERIOD);
-            p_out->msg[index].data.lfo_2.q12_omega_hh = U32_HH(q12_omega);
-            p_out->msg[index].data.lfo_2.q12_omega_hl = U32_HL(q12_omega);
-            p_out->msg[index].data.lfo_2.q12_omega_lh = U32_LH(q12_omega);
-            p_out->msg[index].data.lfo_2.q12_omega_ll = U32_LL(q12_omega);
-            index++;
+            msg.data.lfo_2.q12_omega_hh = U32_HH(q12_omega);
+            msg.data.lfo_2.q12_omega_hl = U32_HL(q12_omega);
+            msg.data.lfo_2.q12_omega_lh = U32_LH(q12_omega);
+            msg.data.lfo_2.q12_omega_ll = U32_LL(q12_omega);
+            set_message(p_out, &msg);
         }
     }
 
@@ -1284,43 +1310,39 @@ static void mml_decode_operate_mixer(PSG_MML_DECODER_t *p_decoder, uint8_t ch, P
         q12_gate_time = (q12_note_on_time * (q12_t)p_decoder->tone_params.channel[ch].gate_time)/MAX_GATE_TIME;
         gate_time_tk = Q_INT(q12_gate_time, 12);
 
-        p_out->msg[index].type = MSG_TYPE_SETTINGS_3;
-        p_out->msg[index].data.settings_3.gate_time_tk_hi = U16_HI(gate_time_tk);
-        p_out->msg[index].data.settings_3.gate_time_tk_lo = U16_LO(gate_time_tk);
-        p_out->msg[index].data.settings_3.tp_end_hi = U16_HI(tp_end);
-        p_out->msg[index].data.settings_3.tp_end_lo = U16_LO(tp_end);
-        index++;
+        msg.type = MSG_TYPE_SETTINGS_3;
+        msg.data.settings_3.gate_time_tk_hi = U16_HI(gate_time_tk);
+        msg.data.settings_3.gate_time_tk_lo = U16_LO(gate_time_tk);
+        msg.data.settings_3.tp_end_hi = U16_HI(tp_end);
+        msg.data.settings_3.tp_end_lo = U16_LO(tp_end);
+        set_message(p_out, &msg);
 
         req_mixer = 0x00;
         req_mixer = ( note_type == E_NOTE_TYPE_TONE  ) ? (0x08)
                   : ( note_type == E_NOTE_TYPE_NOISE ) ? (0x01)
                   : (0x09);
 
-        p_out->msg[index].type = (note_type == E_NOTE_TYPE_REST)
-                               ? MSG_TYPE_NOTE_ON_REST
-                               : MSG_TYPE_NOTE_ON;
+        msg.type = (note_type == E_NOTE_TYPE_REST)
+                 ? MSG_TYPE_NOTE_ON_REST
+                 : MSG_TYPE_NOTE_ON;
 
-        p_out->msg[index].data.note_on.addr = PSG_REG_ADDR_MIXER;
-        p_out->msg[index].data.note_on.data = req_mixer<<ch;
-        p_out->msg[index].data.note_on.note_on_time_tk_hi = U16_HI(note_on_time_tk);
-        p_out->msg[index].data.note_on.note_on_time_tk_lo = U16_LO(note_on_time_tk);
-        index++;
+        msg.data.note_on.addr = PSG_REG_ADDR_MIXER;
+        msg.data.note_on.data = req_mixer<<ch;
+        msg.data.note_on.note_on_time_tk_hi = U16_HI(note_on_time_tk);
+        msg.data.note_on.note_on_time_tk_lo = U16_LO(note_on_time_tk);
+        set_message(p_out, &msg);
     }
 
     if ( !is_start_legato_effect )
     {
         /* Note-OFF */
-        p_out->msg[index].type = MSG_TYPE_NOTE_OFF;
-        p_out->msg[index].data.note_off.addr = PSG_REG_ADDR_MIXER;
-        p_out->msg[index].data.note_off.data = 0x09<<ch;
-        index++;
+        msg.type = MSG_TYPE_NOTE_OFF;
+        msg.data.note_off.addr = PSG_REG_ADDR_MIXER;
+        msg.data.note_off.data = 0x09<<ch;
+        set_message(p_out, &msg);
     }
 
-    PSG_MML_ASSERT(index <= MAX_PSG_MML_MSG_NUM);
-
     p_decoder->tone_params.channel[ch].legato_effect = is_start_legato_effect;
-
-    p_out->msg_cnt = index;
 }
 
 static void mml_decode_dollar(PSG_MML_DECODER_t *p_decoder, uint8_t ch)
@@ -1491,6 +1513,24 @@ static void mml_decode_dollar(PSG_MML_DECODER_t *p_decoder, uint8_t ch)
         default:
             p_decoder->mml_text_info.channel[ch].p_mml_pos++;
             break;
+    }
+}
+
+
+static bool set_message(PSG_MML_MSG_t /*@out@*/*p_out, const PSG_MML_CMD_t *p_msg)
+{
+    PSG_MML_ASSERT(p_out != NULL);
+    PSG_MML_ASSERT(p_msg != NULL);
+
+    if ( p_out->msg_cnt < MAX_PSG_MML_MSG_NUM )
+    {
+        PSG_MML_MEMCPY(&p_out->msg[p_out->msg_cnt], p_msg, sizeof(PSG_MML_CMD_t));
+        p_out->msg_cnt++;
+        return true;
+    }
+    else
+    {
+        return false;
     }
 }
 

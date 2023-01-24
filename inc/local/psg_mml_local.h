@@ -179,7 +179,7 @@ extern "C" {
 #define DEFAULT_SOFT_ENVELOPE_RELEASE           (0)
 
 #define MIN_LOOP_TIMES                          (0)
-#define MAX_LOOP_TIMES                          (1000)
+#define MAX_LOOP_TIMES                          (255)
 #define DEFAULT_LOOP_TIMES                      (1)
 
 #define MAX_LOOP_NESTING_DEPTH                  (5)

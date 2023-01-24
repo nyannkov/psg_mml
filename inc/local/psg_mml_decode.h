@@ -30,8 +30,7 @@ extern "C" {
 
 
 typedef int32_t psg_mml_decode_t;
-#define PSG_MML_DECODE_CHANNEL_END                  (2)
-#define PSG_MML_DECODE_CHANNEL_START                (1)
+#define PSG_MML_DECODE_CHANNEL_END                  (1)
 #define PSG_MML_DECODE_SUCCESS                      (0)
 
 typedef enum
@@ -53,8 +52,8 @@ typedef struct
         const char *p_mml_loop_head[MAX_LOOP_NESTING_DEPTH];
         bool        reset_state;
         bool        end_state;
-        uint16_t    loop_nesting_depth;
-        int16_t     loop_times[MAX_LOOP_NESTING_DEPTH];
+        uint8_t     loop_nesting_depth;
+        uint8_t     loop_times[MAX_LOOP_NESTING_DEPTH];
     } channel[NUM_CHANNEL];
 } MML_TEXT_INFO_t;
 
@@ -71,9 +70,6 @@ typedef struct
         uint8_t     vol_ctrl;
         uint8_t     octave;
         uint8_t     gate_time;
-        q12_t       q12_time_frac_part;
-        q24_t       q24_detune;
-        q24_t       q24_pitchbend;
         uint8_t     lfo_mode;
         uint8_t     lfo_speed;
         uint8_t     lfo_depth;
@@ -85,6 +81,9 @@ typedef struct
         uint16_t    soft_env_decay_tk;
         uint16_t    soft_env_fade_tk;
         uint16_t    soft_env_release_tk;
+        q12_t       q12_time_frac_part;
+        q24_t       q24_detune;
+        q24_t       q24_pitchbend;
         bool        legato_effect;
     } channel[NUM_CHANNEL];
 } TONE_PARAMS_t;
