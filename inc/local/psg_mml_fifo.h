@@ -158,11 +158,11 @@ typedef struct
 #define PSG_MML_FIFO_SCALE          (8)
 #endif
 
-#if PSG_MML_FIFO_SCALE < 2 
-#error PSG_MML_FIFO_SCALE must be greater equal to 2.
+#if PSG_MML_FIFO_SCALE < 1 
+#error PSG_MML_FIFO_SCALE must be greater equal to 1.
 #endif
 
-#define MAX_PSG_MML_FIFO_LENGTH     (MAX_PSG_MML_MSG_NUM*PSG_MML_FIFO_SCALE+1)
+#define MAX_PSG_MML_FIFO_LENGTH     (MAX_PSG_MML_MSG_NUM*PSG_MML_FIFO_SCALE+2)
 
 #if MAX_PSG_MML_FIFO_LENGTH > 30000 
 #error MAX_PSG_MML_FIFO_LENGTH must be less equal to 30,000.

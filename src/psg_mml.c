@@ -199,6 +199,7 @@ static psg_mml_t predecode(uint8_t slot, uint16_t num_predecode)
 psg_mml_t psg_mml_load_text(uint8_t slot, const char *p_mml_text, uint16_t flags)
 {
     PSG_MML_t *p_obj;
+    psg_mml_t r;
     uint8_t use_channel_num;
     if ( slot >= PSG_MML_SLOT_TOTAL_NUM )
     {
@@ -210,17 +211,24 @@ psg_mml_t psg_mml_load_text(uint8_t slot, const char *p_mml_text, uint16_t flags
     {
         return PSG_MML_NOT_INITIALIZED;
     }
+
     if ( p_mml_text == NULL )
     {
-        return PSG_MML_TEXT_NULL;
+        r = PSG_MML_TEXT_NULL;
+        p_mml_text = "";
     }
-    if ( p_mml_text[0] == '\0' )
+    else if ( p_mml_text[0] == '\0' )
     {
-        return PSG_MML_TEXT_EMPTY;
+        r = PSG_MML_TEXT_EMPTY;
     }
-    if ( psg_mml_strnlen(p_mml_text, MAX_MML_TEXT_LEN) >= MAX_MML_TEXT_LEN )
+    else if ( psg_mml_strnlen(p_mml_text, MAX_MML_TEXT_LEN) >= MAX_MML_TEXT_LEN )
     {
-        return PSG_MML_TEXT_OVER_LENGTH;
+        r = PSG_MML_TEXT_OVER_LENGTH;
+        p_mml_text = "";
+    }
+    else
+    {
+        r = PSG_MML_SUCCESS;
     }
 
     psg_mml_decode_load_mml_text(&psg_mml_obj[slot].decoder, p_mml_text, flags);
@@ -228,7 +236,7 @@ psg_mml_t psg_mml_load_text(uint8_t slot, const char *p_mml_text, uint16_t flags
     use_channel_num = psg_mml_decode_get_use_channel_num(&p_obj->decoder);
     psg_mml_ctrl_init(&p_obj->ctrl, use_channel_num);
 
-    return PSG_MML_SUCCESS;
+    return r;
 }
 
 psg_mml_t psg_mml_play_start(uint8_t slot, uint16_t num_predecode)
