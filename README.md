@@ -295,6 +295,24 @@ Therefore, when playing background music in slot 0, it is recommended to write t
  
 Slots 0 and 1 are not linked and are played individually. Select this mode if you want to assign PSGs to slots 0 and 1 individually.
 
+### PSG_MML_USE_TP_TABLE
+
+This setting selects how tp is determined from the note number.
+The default is 1, which refers to the tp_table when the PSG system clock is 2 MHz.
+
+
+Setting this value to 2 will refer to the tp_table defined by the user.
+Set this value when the system clock of the PSG used is not 2 MHz and another tp_table needs to be referenced.
+The tp_table is referenced via psg_mml_usr_tp_table.h. The template for this file is template/psg_mml_usr_tp_table_template.h.
+
+If this value is set to 0, tp will not be determined by tp_table, and tp will be calculated from the note number and PSG system frequency.
+The system frequency of PSG is referred to the value of the constant PSG_MML_FSCLOCK_001HZ.
+
+### PSG_MML_FSCLOCK_001HZ
+
+Specifies the system frequency of PSG. The default is 200,000,000 (=2 MHz, unit: 0.01 Hz). 
+This value is referenced only when the value of PSG_MML_USE_TP_TABLE is 0.
+
 
 ### PSG_MML_DISABLE_PERIODIC_CONTROL()
 

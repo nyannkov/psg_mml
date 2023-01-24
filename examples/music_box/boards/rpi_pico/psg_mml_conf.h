@@ -34,9 +34,11 @@ extern "C" {
 #include <assert.h>
 #include "hardware/irq.h"
 
-#define PSG_MML_SLOT_TOTAL_NUM       (1)
-#define PSG_MML_FIFO_SCALE           (2)
-/*#define PSG_MML_SHARE_SLOT0_DRIVER   true     */
+#define PSG_MML_SLOT_TOTAL_NUM                (1)
+#define PSG_MML_FIFO_SCALE                    (1)
+/*#define PSG_MML_SHARE_SLOT0_DRIVER            true     */
+/*#define PSG_MML_USE_TP_TABLE                  (1)      */
+/*#define PSG_MML_FSCLOCK_001HZ       (2000000uL*100*uL) */ /* 2.00 MHz (unit: 0.01 Hz) */
 
 #ifdef DEBUG
 #define PSG_MML_ASSERT(TF)              assert((TF))

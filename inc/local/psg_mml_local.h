@@ -99,8 +99,11 @@ extern "C" {
 #define MAX_DETUNE_LEVEL                        (360*8)
 #define DEFAULT_DETUNE_LEVEL                    (0)
 
-#define Q_PITCHBEND_FACTOR                      (q24_t)(16809550)// POW(2, 1/360) << 24
-#define Q_PITCHBEND_FACTOR_N                    (q24_t)(16744944)// POW(2,-1/360) << 24
+#define Q_PITCHBEND_FACTOR                      (q24_t)(16809550)/* POW(2, 1/360) << 24 */
+#define Q_PITCHBEND_FACTOR_N                    (q24_t)(16744944)/* POW(2,-1/360) << 24 */
+
+#define Q_CALCTP_FACTOR                         (q24_t)(17774841)/* POW(2, 1/12) <<24  */ 
+#define Q_CALCTP_FACTOR_N                       (q24_t)(15835583)/* POW(2,-1/12) <<24  */ 
 
 #define MIN_PITCHBEND_LEVEL                     (-360*8)
 #define MAX_PITCHBEND_LEVEL                     (360*8)
@@ -176,7 +179,7 @@ extern "C" {
 #define DEFAULT_SOFT_ENVELOPE_RELEASE           (0)
 
 #define MIN_LOOP_TIMES                          (0)
-#define MAX_LOOP_TIMES                          (1000)
+#define MAX_LOOP_TIMES                          (255)
 #define DEFAULT_LOOP_TIMES                      (1)
 
 #define MAX_LOOP_NESTING_DEPTH                  (5)
